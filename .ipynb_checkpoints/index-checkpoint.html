@@ -2771,15 +2771,18 @@
     // ============================================
     // AUTH
     // ============================================
-    // نظام تسجيل الدخول المحسّن جداً
+    // نظام تسجيل الدخول الذكي
     // ============================================
     class AuthSession {
       constructor() {
-        this.storageKey = 'clinic_session_v2';
-        this.dataKey = 'clinic_data_v2';
-        this.encryptionKey = 'clinic-secure-2024-' + window.location.hostname;
+        this.storageKey = 'clinic_session';
+        this.dataKey = 'clinic_data_offline';
+        this.lastSyncKey = 'clinic_last_sync';
+        this.maxOfflineTime = 30 * 24 * 60 * 60 * 1000; // 30 يوم
+        this.encryptionKey = 'clinic-secure-key-2024'; // مفتاح التشفير الثابت
       }
 
+      // دوال التشفير وفك التشفير
       encrypt(text) {
         return CryptoJS.AES.encrypt(text, this.encryptionKey).toString();
       }
@@ -2789,110 +2792,113 @@
           const bytes = CryptoJS.AES.decrypt(ciphertext, this.encryptionKey);
           return bytes.toString(CryptoJS.enc.Utf8);
         } catch (e) {
-          return null;
+          return null; // فشل في فك التشفير
         }
       }
 
-      // حفظ الجلسة بشكل دائم - مرة واحدة للأبد
-      saveSession(clinicId, password) {
+      saveSession(clinicId, password, rememberMe = false) {
         const session = {
           clinicId: clinicId,
           password: password,
-          savedAt: Date.now(),
-          version: 2
+          loginTime: Date.now(),
+          rememberMe: rememberMe,
+          lastOnline: Date.now()
         };
-        const encrypted = this.encrypt(JSON.stringify(session));
+        const sessionStr = JSON.stringify(session);
+        const encrypted = this.encrypt(sessionStr);
         localStorage.setItem(this.storageKey, encrypted);
-        sessionStorage.setItem(this.storageKey, encrypted);
-        console.log('✅ تم حفظ الجلسة بشكل دائم');
         return session;
       }
 
-      // استرجاع الجلسة من الحفظ الدائم
       getSession() {
         const encrypted = localStorage.getItem(this.storageKey);
         if (!encrypted) return null;
-        
-        try {
-          const decrypted = this.decrypt(encrypted);
-          if (decrypted) {
-            return JSON.parse(decrypted);
+        const decrypted = this.decrypt(encrypted);
+        if (decrypted) {
+          return JSON.parse(decrypted);
+        } else {
+          // محاولة قراءة كنص عادي للتوافق مع البيانات القديمة
+          try {
+            return JSON.parse(encrypted);
+          } catch (e) {
+            return null;
           }
-        } catch (e) {
-          console.error('خطأ في فك التشفير:', e);
         }
-        return null;
       }
 
-      // التحقق من وجود جلسة سابقة
-      hasValidSession() {
-        return this.getSession() !== null;
+      isSessionValid() {
+        const session = this.getSession();
+        if (!session) return false;
+        const timeSinceLastOnline = Date.now() - session.lastOnline;
+        if (timeSinceLastOnline > this.maxOfflineTime) {
+          this.clearSession();
+          return false;
+        }
+        return true;
       }
 
-      // حفظ البيانات الكاملة
-      saveData(clinicData) {
-        const encrypted = this.encrypt(JSON.stringify(clinicData));
+      saveOfflineData(data) {
+        const dataStr = JSON.stringify(data);
+        const encrypted = this.encrypt(dataStr);
         localStorage.setItem(this.dataKey, encrypted);
+        localStorage.setItem(this.lastSyncKey, Date.now().toString());
       }
 
-      // استرجاع البيانات
-      getData() {
+      getOfflineData() {
         const encrypted = localStorage.getItem(this.dataKey);
         if (!encrypted) return null;
-        
-        try {
-          const decrypted = this.decrypt(encrypted);
-          if (decrypted) {
-            return JSON.parse(decrypted);
+        const decrypted = this.decrypt(encrypted);
+        if (decrypted) {
+          return JSON.parse(decrypted);
+        } else {
+          // محاولة قراءة كنص عادي للتوافق مع البيانات القديمة
+          try {
+            return JSON.parse(encrypted);
+          } catch (e) {
+            return null;
           }
-        } catch (e) {
-          console.error('خطأ في استرجاع البيانات:', e);
         }
-        return null;
       }
 
-      // تسجيل خروج كامل
-      logout() {
+      clearSession() {
         localStorage.removeItem(this.storageKey);
         localStorage.removeItem(this.dataKey);
-        sessionStorage.removeItem(this.storageKey);
-        console.log('👋 تم تسجيل الخروج');
+        localStorage.removeItem(this.lastSyncKey);
+      }
+
+      updateLastOnlineTime() {
+        const session = this.getSession();
+        if (session) {
+          session.lastOnline = Date.now();
+          const sessionStr = JSON.stringify(session);
+          const encrypted = this.encrypt(sessionStr);
+          localStorage.setItem(this.storageKey, encrypted);
+        }
       }
     }
 
     const authSession = new AuthSession();
 
     // ============================================
-    // دالة الفتح الذكي - فتح مباشر بدون تسجيل دخول متكرر
+    // دالة الفتح الذكي
     // ============================================
     function initAppWithSmartLogin() {
-      console.log('🚀 بدء التطبيق...');
-      
-      // التحقق من وجود جلسة سابقة محفوظة
-      if (authSession.hasValidSession()) {
-        console.log('✅ جلسة محفوظة موجودة - الفتح المباشر');
+      if (authSession.isSessionValid()) {
+        console.log('✅ جلسة سابقة موجودة، فتح التطبيق مباشرة...');
         const session = authSession.getSession();
-        const userData = authSession.getData();
-        
         clinicId = session.clinicId;
         
-        // تحميل البيانات من الحفظ المحلي
-        if (userData) {
-          dbData = userData;
-          loadOfflineData();
-          console.log('📦 تم تحميل البيانات المحلية');
-        }
-        
-        // محاولة المزامنة مع Firebase إذا كان متصل بالإنترنت
         if (navigator.onLine) {
-          console.log('🔄 محاولة المزامنة مع Firebase...');
+          console.log('🔄 جاري المزامنة مع قاعدة البيانات...');
           syncWithOnlineDatabase(session.clinicId, session.password);
+        } else {
+          console.log('📴 بدون إنترنت، تحميل البيانات المحلية...');
+          loadOfflineData();
         }
         
         showApp();
       } else {
-        // لا توجد جلسة - اعرض شاشة تسجيل الدخول
-        console.log('🔐 لا توجد جلسة محفوظة - اعرض شاشة التسجيل');
+        console.log('🔐 لا توجد جلسة، اعرض شاشة تسجيل الدخول');
         document.getElementById('loginScreen').style.display = 'flex';
       }
     }
@@ -2900,118 +2906,48 @@
     // ============================================
     // دالة تسجيل الدخول المحسّنة
     // ============================================
-    function handleLogin() {
-      const id = document.getElementById('loginClinicId').value.trim().toLowerCase();
-      const pass = document.getElementById('loginPassword').value;
-      const errorEl = document.getElementById('loginError');
-      const btn = document.getElementById('btnLogin');
-
-      console.log('🔐 محاولة تسجيل دخول:', id);
+    function handleLogin(rememberDevice = false) {
+      console.log('Login function called');
+      var id = document.getElementById('loginClinicId').value.trim().toLowerCase();
+      var pass = document.getElementById('loginPassword').value;
+      var errorEl = document.getElementById('loginError');
+      var btn = document.getElementById('btnLogin');
 
       if (!id || !pass) {
-        showError(errorEl, 'يرجى إدخال المعرف وكلمة المرور');
+        errorEl.textContent = 'يرجى إدخال المعرف وكلمة المرور';
+        errorEl.style.display = 'block';
         return;
       }
 
       btn.disabled = true;
-      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحقق...';
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الاتصال...';
       errorEl.style.display = 'none';
 
-      // إذا كان بدون إنترنت
-      if (!navigator.onLine) {
-        handleOfflineLogin(id, pass, errorEl, btn);
-        return;
-      }
+      console.log('جاري الاتصال بالعيادة:', id);
 
-      // الاتصال بـ Firebase
-      db.ref('clinics/' + id).once('value').then(snap => {
-        const data = snap.val();
-        
-        if (data === null) {
-          // إنشاء عيادة جديدة
-          createNewClinic(id, pass, errorEl, btn);
-        } else if (data.password === pass) {
-          // تسجيل دخول ناجح
-          clinicId = id;
-          dbData = {
-            patients: data.patients || {},
-            visits: data.visits || {}
-          };
-          
-          // حفظ الجلسة والبيانات بشكل دائم
-          authSession.saveSession(id, pass);
-          authSession.saveData(dbData);
-          
-          loadOfflineData();
-          showApp();
-          document.getElementById('loginScreen').style.display = 'none';
+      // إذا كان بدون إنترنت، جرّب من البيانات المحلية
+      if (!navigator.onLine) {
+        const offlineData = authSession.getOfflineData();
+        if (offlineData && offlineData.clinicId === id) {
+          if (offlineData.password === pass) {
+            console.log('✅ تسجيل دخول من البيانات المحلية');
+            clinicId = id;
+            authSession.saveSession(id, pass, rememberDevice);
+            loadOfflineData();
+            showApp();
+            return;
+          } else {
+            errorEl.textContent = 'كلمة المرور غير صحيحة';
+            errorEl.style.display = 'block';
+            btn.disabled = false;
+            btn.innerHTML = 'دخول';
+            return;
+          }
         } else {
-          showError(errorEl, '❌ كلمة المرور غير صحيحة');
+          errorEl.textContent = 'لا توجد بيانات محلية. يرجى الاتصال بالإنترنت لأول تسجيل دخول';
+          errorEl.style.display = 'block';
           btn.disabled = false;
           btn.innerHTML = 'دخول';
-        }
-      }).catch(err => {
-        console.error('خطأ Firebase:', err);
-        showError(errorEl, '❌ خطأ في الاتصال. جرب لاحقاً.');
-        btn.disabled = false;
-        btn.innerHTML = 'دخول';
-      });
-    }
-
-    function handleOfflineLogin(id, pass, errorEl, btn) {
-      const userData = authSession.getData();
-      
-      if (userData && userData.clinicId === id && userData.password === pass) {
-        console.log('✅ تسجيل دخول بدون نت');
-        clinicId = id;
-        dbData = userData;
-        authSession.saveSession(id, pass);
-        loadOfflineData();
-        showApp();
-        document.getElementById('loginScreen').style.display = 'none';
-      } else {
-        showError(errorEl, '❌ بدون إنترنت - لا توجد بيانات محفوظة');
-        btn.disabled = false;
-        btn.innerHTML = 'دخول';
-      }
-    }
-
-    function createNewClinic(id, pass, errorEl, btn) {
-      const initial = {
-        clinicId: id,
-        password: pass,
-        createdAt: Date.now(),
-        patients: {
-          p1: { name: "محمد حمزة", phone: "07733341855", diseases: [], meds: "", history: "", notes: "" },
-          p2: { name: "علي جابر", phone: "07865161719", diseases: [], meds: "", history: "", notes: "" },
-          p3: { name: "كاظم محمد كامل", phone: "07818429336", diseases: ["ضغط دم"], meds: "لا يوجد", history: "غير رياضي", notes: "" }
-        },
-        visits: { v1: { patientId: "p3", service: "حجامة - النوع الأول", date: today(), notes: "ألم أسفل الظهر" } }
-      };
-
-      db.ref('clinics/' + id).set(initial).then(() => {
-        console.log('✅ عيادة جديدة منشأة');
-        clinicId = id;
-        dbData = initial;
-        
-        authSession.saveSession(id, pass);
-        authSession.saveData(initial);
-        
-        loadOfflineData();
-        showApp();
-        document.getElementById('loginScreen').style.display = 'none';
-      }).catch(err => {
-        console.error('خطأ في إنشاء عيادة:', err);
-        showError(errorEl, '❌ خطأ في الإنشاء');
-        btn.disabled = false;
-        btn.innerHTML = 'دخول';
-      });
-    }
-
-    function showError(el, msg) {
-      el.textContent = msg;
-      el.style.display = 'block';
-    }
           return;
         }
       }
@@ -3127,15 +3063,13 @@
     // تسجيل خروج محسّن
     // ============================================
     function handleLogout() {
-      if (confirm('هل تريد تسجيل الخروج نهائياً؟\n\n(ستحتاج لتسجيل دخول جديد في المرة القادمة)')) {
-        authSession.logout();
-        console.log('👋 تم تسجيل الخروج نهائياً');
+      if (confirm('هل تريد تسجيل الخروج؟\n\nستبقى البيانات محفوظة محلياً للاستخدام بدون إنترنت')) {
+        authSession.clearSession();
+        console.log('✅ تم تسجيل الخروج');
         clinicId = null;
         dbData = { patients: {}, visits: {} };
         document.getElementById('appShell').style.display = 'none';
         document.getElementById('loginScreen').style.display = 'flex';
-        document.getElementById('loginClinicId').value = '';
-        document.getElementById('loginPassword').value = '';
       }
     }
 
@@ -4631,7 +4565,5 @@
 
   </script>
 </body>
-
-</html>
 
 </html>

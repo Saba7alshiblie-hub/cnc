@@ -1,0 +1,46 @@
+{
+  "name": "ilmiyya-clinic",
+  "version": "1.0.0",
+  "description": "نظام إدارة العيادة والمرضى - Clinic Management System",
+  "type": "module",
+  "main": "index.html",
+  "scripts": {
+    "start": "http-server -p 8000 -g",
+    "serve": "npx http-server",
+    "dev": "npx http-server -c-1",
+    "build:icons": "echo 'Script to resize and generate icons from logo.png'",
+    "test:lighthouse": "lighthouse https://localhost:8000 --view",
+    "test:a11y": "ngrok http 8000 --log stdout | grep -i ngrok",
+    "analyze": "npm run build:icons && npm run test:lighthouse"
+  },
+  "keywords": [
+    "clinic",
+    "management",
+    "medical",
+    "patients",
+    "healthcare",
+    "pwa",
+    "arabic",
+    "حجامة",
+    "عيادة",
+    "إدارة"
+  ],
+  "author": "Saba7alshiblie-hub",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Saba7alshiblie-hub/cnc.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Saba7alshiblie-hub/cnc/issues"
+  },
+  "homepage": "https://github.com/Saba7alshiblie-hub/cnc#readme",
+  "devDependencies": {
+    "firebase-tools": "^12.0.0",
+    "http-server": "^14.1.1",
+    "lighthouse": "^11.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
