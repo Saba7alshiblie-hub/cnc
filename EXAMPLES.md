@@ -67,24 +67,47 @@ function showNotification(title, options) {
 }
 ```
 
-## 💾 استخدام LocalStorage
+## � استخدام LocalStorage مع التشفير
 
 ```javascript
-// حفظ بيانات المستخدم
+// دوال التشفير وفك التشفير
+function encrypt(text, key) {
+  return CryptoJS.AES.encrypt(text, key).toString();
+}
+
+function decrypt(ciphertext, key) {
+  try {
+    const bytes = CryptoJS.AES.decrypt(ciphertext, key);
+    return bytes.toString(CryptoJS.enc.Utf8);
+  } catch (e) {
+    return null;
+  }
+}
+
+// حفظ بيانات المستخدم مع التشفير
 function saveUserData(key, data) {
   try {
-    localStorage.setItem(key, JSON.stringify(data));
-    console.log('✅ Data saved:', key);
+    const dataStr = JSON.stringify(data);
+    const encrypted = encrypt(dataStr, 'clinic-secure-key-2024');
+    localStorage.setItem(key, encrypted);
+    console.log('✅ Data saved securely:', key);
   } catch (error) {
     console.error('❌ Failed to save:', error);
   }
 }
 
-// استرجاع البيانات
+// استرجاع البيانات مع فك التشفير
 function getUserData(key) {
   try {
-    const data = localStorage.getItem(key);
-    return data ? JSON.parse(data) : null;
+    const encrypted = localStorage.getItem(key);
+    if (!encrypted) return null;
+    const decrypted = decrypt(encrypted, 'clinic-secure-key-2024');
+    if (decrypted) {
+      return JSON.parse(decrypted);
+    } else {
+      // محاولة قراءة كنص عادي للتوافق
+      return JSON.parse(encrypted);
+    }
   } catch (error) {
     console.error('❌ Failed to retrieve:', error);
     return null;

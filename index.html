@@ -59,6 +59,9 @@
     });
   </script>
   
+  <!-- CryptoJS for encryption -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  
   <style>
     * {
       margin: 0;
@@ -2776,6 +2779,21 @@
         this.dataKey = 'clinic_data_offline';
         this.lastSyncKey = 'clinic_last_sync';
         this.maxOfflineTime = 30 * 24 * 60 * 60 * 1000; // 30 يوم
+        this.encryptionKey = 'clinic-secure-key-2024'; // مفتاح التشفير الثابت
+      }
+
+      // دوال التشفير وفك التشفير
+      encrypt(text) {
+        return CryptoJS.AES.encrypt(text, this.encryptionKey).toString();
+      }
+
+      decrypt(ciphertext) {
+        try {
+          const bytes = CryptoJS.AES.decrypt(ciphertext, this.encryptionKey);
+          return bytes.toString(CryptoJS.enc.Utf8);
+        } catch (e) {
+          return null; // فشل في فك التشفير
+        }
       }
 
       saveSession(clinicId, password, rememberMe = false) {
@@ -2786,13 +2804,26 @@
           rememberMe: rememberMe,
           lastOnline: Date.now()
         };
-        localStorage.setItem(this.storageKey, JSON.stringify(session));
+        const sessionStr = JSON.stringify(session);
+        const encrypted = this.encrypt(sessionStr);
+        localStorage.setItem(this.storageKey, encrypted);
         return session;
       }
 
       getSession() {
-        const session = localStorage.getItem(this.storageKey);
-        return session ? JSON.parse(session) : null;
+        const encrypted = localStorage.getItem(this.storageKey);
+        if (!encrypted) return null;
+        const decrypted = this.decrypt(encrypted);
+        if (decrypted) {
+          return JSON.parse(decrypted);
+        } else {
+          // محاولة قراءة كنص عادي للتوافق مع البيانات القديمة
+          try {
+            return JSON.parse(encrypted);
+          } catch (e) {
+            return null;
+          }
+        }
       }
 
       isSessionValid() {
@@ -2807,13 +2838,26 @@
       }
 
       saveOfflineData(data) {
-        localStorage.setItem(this.dataKey, JSON.stringify(data));
+        const dataStr = JSON.stringify(data);
+        const encrypted = this.encrypt(dataStr);
+        localStorage.setItem(this.dataKey, encrypted);
         localStorage.setItem(this.lastSyncKey, Date.now().toString());
       }
 
       getOfflineData() {
-        const data = localStorage.getItem(this.dataKey);
-        return data ? JSON.parse(data) : null;
+        const encrypted = localStorage.getItem(this.dataKey);
+        if (!encrypted) return null;
+        const decrypted = this.decrypt(encrypted);
+        if (decrypted) {
+          return JSON.parse(decrypted);
+        } else {
+          // محاولة قراءة كنص عادي للتوافق مع البيانات القديمة
+          try {
+            return JSON.parse(encrypted);
+          } catch (e) {
+            return null;
+          }
+        }
       }
 
       clearSession() {
@@ -2826,7 +2870,9 @@
         const session = this.getSession();
         if (session) {
           session.lastOnline = Date.now();
-          localStorage.setItem(this.storageKey, JSON.stringify(session));
+          const sessionStr = JSON.stringify(session);
+          const encrypted = this.encrypt(sessionStr);
+          localStorage.setItem(this.storageKey, encrypted);
         }
       }
     }

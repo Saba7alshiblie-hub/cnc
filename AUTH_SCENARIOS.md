@@ -123,22 +123,11 @@
 ### في localStorage:
 
 ```javascript
-// الجلسة الحالية
-localStorage['clinic_session'] = {
-  clinicId: "12345",
-  password: "mypass",
-  loginTime: 1646569200000,
-  rememberMe: true,
-  lastOnline: 1646569500000
-}
+// الجلسة الحالية (مشفرة)
+localStorage['clinic_session'] = "U2FsdGVkX1+...encrypted session data..."
 
-// البيانات المحلية
-localStorage['clinic_data_offline'] = {
-  clinicId: "12345",
-  password: "mypass",
-  data: { patients: {...}, visits: {...} },
-  lastSync: 1646569400000
-}
+// البيانات المحلية (مشفرة)
+localStorage['clinic_data_offline'] = "U2FsdGVkX1+...encrypted clinic data..."
 
 // آخر مزامنة
 localStorage['clinic_last_sync'] = "1646569400000"

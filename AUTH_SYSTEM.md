@@ -36,14 +36,19 @@ class AuthSession {
       rememberMe: rememberMe,
       lastOnline: Date.now()
     };
-    localStorage.setItem(this.storageKey, JSON.stringify(session));
+    const sessionStr = JSON.stringify(session);
+    const encrypted = CryptoJS.AES.encrypt(sessionStr, 'clinic-secure-key-2024').toString();
+    localStorage.setItem(this.storageKey, encrypted);
     return session;
   }
 
   // استرجاع الجلسة
   getSession() {
-    const session = localStorage.getItem(this.storageKey);
-    return session ? JSON.parse(session) : null;
+    const encrypted = localStorage.getItem(this.storageKey);
+    if (!encrypted) return null;
+    const bytes = CryptoJS.AES.decrypt(encrypted, 'clinic-secure-key-2024');
+    const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+    return JSON.parse(decrypted);
   }
 
   // التحقق من صلاحية الجلسة
@@ -63,14 +68,19 @@ class AuthSession {
 
   // حفظ البيانات محلياً
   saveOfflineData(data) {
-    localStorage.setItem(this.dataKey, JSON.stringify(data));
+    const dataStr = JSON.stringify(data);
+    const encrypted = CryptoJS.AES.encrypt(dataStr, 'clinic-secure-key-2024').toString();
+    localStorage.setItem(this.dataKey, encrypted);
     localStorage.setItem(this.lastSyncKey, Date.now().toString());
   }
 
   // استرجاع البيانات المحلية
   getOfflineData() {
-    const data = localStorage.getItem(this.dataKey);
-    return data ? JSON.parse(data) : null;
+    const encrypted = localStorage.getItem(this.dataKey);
+    if (!encrypted) return null;
+    const bytes = CryptoJS.AES.decrypt(encrypted, 'clinic-secure-key-2024');
+    const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+    return JSON.parse(decrypted);
   }
 
   // حذف الجلسة (تسجيل خروج)

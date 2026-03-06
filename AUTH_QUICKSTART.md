@@ -56,21 +56,11 @@
 ### في localStorage (الهاتف / الكمبيوتر):
 
 ```javascript
-// 1️⃣ بيانات الجلسة الحالية
-localStorage.clinic_session = {
-  clinicId: "12345",
-  password: "mypass",
-  loginTime: 1646569200000,
-  rememberMe: true,
-  lastOnline: 1646569500000
-}
+// 1️⃣ بيانات الجلسة الحالية (مشفرة)
+localStorage.clinic_session = "U2FsdGVkX1+...encrypted session data..."
 
-// 2️⃣ بيانات المرضى والزيارات (محلي)
-localStorage.clinic_data_offline = {
-  clinicId: "12345",
-  data: { patients: {...}, visits: {...} }
-  lastSync: 1646569400000
-}
+// 2️⃣ بيانات المرضى والزيارات (مشفرة)
+localStorage.clinic_data_offline = "U2FsdGVkX1+...encrypted clinic data..."
 
 // 3️⃣ آخر وقت مزامنة
 localStorage.clinic_last_sync = 1646569400000
@@ -100,11 +90,11 @@ clinics/12345/
 
 ## 🔒 الأمان
 
-⚠️ **ملاحظة أمانية**: كلمة المرور محفوظة محلياً كنص عادي.
+⚠️ **ملاحظة أمانية محسّنة**: البيانات والكلمة المرور محمية الآن بتشفير AES.
 
 للأمان الأعلى (اختياري):
 ```javascript
-// استخدم encryption بدلاً من النص العادي
+// استخدم encryption أقوى
 import bcrypt from 'bcryptjs';
 const hashedPassword = await bcrypt.hash(password, 10);
 ```
