@@ -1,0 +1,49 @@
+{
+  "name": "العيادة العلمية",
+  "short_name": "العيادة",
+  "scope": "./",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0ea5e9",
+  "theme_color": "#0ea5e9",
+  "description": "نظام إدارة العيادة العلمية والمرضى",
+  "categories": ["medical", "health"],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "my-new-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "my-new-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "my-new-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "my-new-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "إضافة مريض جديد",
+      "url": "./index.html?action=new-patient"
+    },
+    {
+      "name": "زيارات اليوم",
+      "url": "./index.html?action=today-visits"
+    }
+  ]
+}
