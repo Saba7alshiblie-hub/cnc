@@ -109,7 +109,7 @@
   </script>
   
   <!-- CryptoJS for encryption -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js" defer></script>
   
   <style>
     * {
@@ -119,35 +119,52 @@
     }
 
     :root {
-      --primary: #0ea5e9;
-      --primary-light: #38bdf8;
-      --primary-dark: #0284c7;
-      --danger: #ef4444;
-      --success: #10b981;
-      --warning: #f59e0b;
-      --purple: #14b8a6;
-      --gray-50: #f8fafc;
-      --gray-100: #f1f5f9;
-      --gray-200: #e2e8f0;
-      --gray-300: #cbd5e1;
-      --gray-400: #94a3b8;
-      --gray-500: #64748b;
-      --gray-600: #475569;
-      --gray-700: #334155;
-      --gray-800: #1e293b;
-      --gray-900: #0f172a;
+      --primary: #2563eb;
+      --primary-light: #3b82f6;
+      --primary-dark: #1d4ed8;
+      --secondary: #7c3aed;
+      --secondary-light: #8b5cf6;
+      --secondary-dark: #6d28d9;
+      --danger: #dc2626;
+      --success: #059669;
+      --warning: #d97706;
+      --info: #0891b2;
+      --gray-50: #f9fafb;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-300: #d1d5db;
+      --gray-400: #9ca3af;
+      --gray-500: #6b7280;
+      --gray-600: #4b5563;
+      --gray-700: #374151;
+      --gray-800: #1f2937;
+      --gray-900: #111827;
       --white: #ffffff;
-      --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-      --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.1);
-      --radius: 12px;
-      --radius-lg: 20px;
+      --black: #000000;
+      --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+      --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+      --radius: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+      --gradient-primary: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      --gradient-secondary: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-light) 100%);
     }
 
     /* Dark mode variables */
     [data-theme="dark"] {
-      --primary: #38bdf8;
-      --primary-light: #60a5fa;
-      --primary-dark: #0ea5e9;
+      --primary: #60a5fa;
+      --primary-light: #93c5fd;
+      --primary-dark: #3b82f6;
+      --secondary: #a78bfa;
+      --secondary-light: #c4b5fd;
+      --secondary-dark: #8b5cf6;
+      --danger: #f87171;
+      --success: #34d399;
+      --warning: #fbbf24;
+      --info: #38bdf8;
       --gray-50: #0f172a;
       --gray-100: #1e293b;
       --gray-200: #334155;
@@ -158,17 +175,28 @@
       --gray-700: #e2e8f0;
       --gray-800: #f1f5f9;
       --gray-900: #f8fafc;
+      --white: #1e293b;
+      --black: #f8fafc;
+      --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.5), 0 1px 2px -1px rgb(0 0 0 / 0.5);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.5);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
+      --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.5);
+    }
       --white: #0f172a;
       --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3);
       --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.3);
     }
 
     body {
-      font-family: 'Tajawal', sans-serif;
-      background: var(--gray-100);
+      font-family: 'Tajawal', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, var(--gray-50) 0%, var(--gray-100) 100%);
       color: var(--gray-800);
       min-height: 100vh;
       direction: rtl;
+      line-height: 1.6;
+      font-size: 14px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
     @keyframes fadeIn {
@@ -208,27 +236,53 @@
 
     .login-card {
       background: var(--white);
-      border-radius: var(--radius-lg);
+      border-radius: var(--radius-xl);
       padding: 48px 40px;
       text-align: center;
-      max-width: 420px;
+      max-width: 450px;
       width: 90%;
-      box-shadow: var(--shadow-lg);
-      animation: fadeIn 0.5s;
+      box-shadow: var(--shadow-xl);
+      animation: fadeIn 0.6s ease-out;
+      border: 1px solid var(--gray-200);
+      backdrop-filter: blur(10px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .login-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--gradient-primary);
     }
 
     .login-logo {
-      width: 100px;
-      height: 100px;
-      background: white;
+      width: 120px;
+      height: 120px;
+      background: var(--gradient-primary);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0 auto 24px;
-      box-shadow: 0 8px 32px rgba(14, 165, 233, 0.4);
+      margin: 0 auto 32px;
+      box-shadow: var(--shadow-lg);
       overflow: hidden;
-      padding: 10px;
+      padding: 8px;
+      border: 4px solid var(--white);
+      position: relative;
+    }
+
+    .login-logo::after {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      background: var(--gradient-primary);
+      opacity: 0.2;
+      z-index: -1;
     }
 
     .login-logo img {
@@ -239,28 +293,48 @@
     }
 
     .login-card h1 {
-      font-size: 28px;
+      font-size: 32px;
       font-weight: 900;
       color: var(--gray-900);
-      margin-bottom: 8px;
+      margin-bottom: 12px;
+      background: var(--gradient-primary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
     .login-card>p {
-      font-size: 14px;
-      color: var(--gray-500);
-      margin-bottom: 32px;
+      font-size: 16px;
+      color: var(--gray-600);
+      margin-bottom: 40px;
+      line-height: 1.6;
+      font-weight: 500;
     }
 
     .login-input {
       width: 100%;
-      padding: 14px 16px;
+      padding: 16px 20px;
       border: 2px solid var(--gray-200);
-      border-radius: var(--radius);
-      font-size: 15px;
+      border-radius: var(--radius-md);
+      font-size: 16px;
       font-family: 'Tajawal', sans-serif;
-      margin-bottom: 16px;
+      margin-bottom: 20px;
       outline: none;
-      transition: all 0.3s;
+      transition: all 0.3s ease;
+      background: var(--gray-50);
+      color: var(--gray-800);
+    }
+
+    .login-input:focus {
+      border-color: var(--primary);
+      background: var(--white);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      transform: translateY(-1px);
+    }
+
+    .login-input::placeholder {
+      color: var(--gray-400);
+      font-weight: 400;
     }
 
     .login-input:focus {
@@ -270,37 +344,70 @@
 
     .btn-login {
       width: 100%;
-      padding: 14px;
-      background: linear-gradient(135deg, var(--primary), var(--purple));
+      padding: 16px 24px;
+      background: var(--gradient-primary);
       border: none;
-      border-radius: var(--radius);
-      font-size: 16px;
+      border-radius: var(--radius-md);
+      font-size: 18px;
       font-weight: 700;
       color: white;
       font-family: 'Tajawal', sans-serif;
       cursor: pointer;
-      transition: all 0.3s;
+      transition: all 0.3s ease;
+      box-shadow: var(--shadow-md);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-login::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    .btn-login:hover::before {
+      left: 100%;
     }
 
     .btn-login:hover {
       transform: translateY(-2px);
-      box-shadow: var(--shadow-lg);
+      box-shadow: var(--shadow-xl);
+      background: var(--gradient-secondary);
+    }
+
+    .btn-login:active {
+      transform: translateY(0);
     }
 
     .btn-login:disabled {
       opacity: 0.7;
       cursor: not-allowed;
+      transform: none;
+      box-shadow: var(--shadow);
     }
 
     .login-error {
-      background: #fef2f2;
+      background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
       border: 1px solid #fecaca;
-      border-radius: 8px;
-      padding: 12px;
-      font-size: 13px;
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      font-size: 14px;
       color: var(--danger);
-      margin-bottom: 16px;
+      margin-bottom: 24px;
       display: none;
+      box-shadow: var(--shadow);
+      animation: shake 0.5s ease-in-out;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
     }
 
     .login-note {
@@ -371,28 +478,32 @@
       position: fixed;
       top: 0;
       right: 0;
-      width: 280px;
+      width: 320px;
       height: 100vh;
       background: var(--white);
       border-left: 1px solid var(--gray-200);
       display: flex;
       flex-direction: column;
       z-index: 100;
-      box-shadow: var(--shadow-lg);
-      transition: transform 0.3s;
+      box-shadow: var(--shadow-xl);
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      backdrop-filter: blur(10px);
     }
 
     .sidebar-overlay {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(2px);
       z-index: 99;
+      animation: fadeIn 0.3s ease-out;
     }
 
     .sidebar-logo {
-      padding: 24px 20px;
-      border-bottom: 1px solid var(--gray-100);
+      padding: 32px 24px;
+      border-bottom: 1px solid var(--gray-200);
+      background: linear-gradient(135deg, var(--gray-50) 0%, var(--white) 100%);
     }
 
     .logo-badge {
@@ -484,40 +595,64 @@
     .nav-item {
       display: flex;
       align-items: center;
-      gap: 14px;
-      padding: 12px 20px;
-      margin: 4px 12px;
-      border-radius: var(--radius);
+      gap: 16px;
+      padding: 16px 24px;
+      margin: 6px 16px;
+      border-radius: var(--radius-lg);
       cursor: pointer;
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 600;
       color: var(--gray-600);
-      transition: all 0.3s;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .nav-item::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      width: 4px;
+      background: var(--primary);
+      transform: scaleY(0);
+      transition: transform 0.3s ease;
+      border-radius: 0 4px 4px 0;
     }
 
     .nav-item:hover {
       background: var(--gray-50);
       color: var(--gray-900);
+      transform: translateX(4px);
+      box-shadow: var(--shadow);
     }
 
     .nav-item.active {
-      background: rgba(14, 165, 233, 0.1);
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.1) 0%, rgba(124, 58, 237, 0.1) 100%);
       color: var(--primary);
+      box-shadow: var(--shadow-md);
+    }
+
+    .nav-item.active::before {
+      transform: scaleY(1);
     }
 
     .nav-item .ni {
       width: 24px;
       text-align: center;
+      font-size: 18px;
     }
 
     .nav-item .badge {
       margin-right: auto;
-      background: var(--primary);
+      background: var(--gradient-primary);
       color: white;
       font-size: 11px;
       font-weight: 800;
-      padding: 4px 10px;
+      padding: 4px 12px;
       border-radius: 20px;
+      box-shadow: var(--shadow);
     }
 
     .sidebar-bottom {
@@ -1459,26 +1594,42 @@
         font-size: 14px;
         -webkit-text-size-adjust: 100%;
         overscroll-behavior: none;
+        touch-action: manipulation;
       }
 
       .mobile-header {
         display: flex;
-        height: 56px;
-        padding: 0 12px;
+        height: 64px;
+        padding: 0 16px;
+        background: var(--white);
+        border-bottom: 1px solid var(--gray-200);
+        box-shadow: var(--shadow);
       }
 
       .mobile-header h1 {
-        font-size: 15px;
+        font-size: 16px;
+        font-weight: 800;
       }
 
       .logo-icon-small {
-        width: 32px;
-        height: 32px;
+        width: 36px;
+        height: 36px;
       }
 
       .menu-toggle {
-        width: 36px;
-        height: 36px;
+        width: 40px;
+        height: 40px;
+        border-radius: var(--radius-md);
+        background: var(--gray-50);
+        border: 1px solid var(--gray-200);
+        color: var(--gray-600);
+        transition: all 0.3s ease;
+      }
+
+      .menu-toggle:hover {
+        background: var(--primary);
+        color: var(--white);
+        transform: scale(1.05);
       }
 
       .sidebar {
@@ -2304,7 +2455,8 @@
   <!-- Splash Screen -->
   <div id="splashScreen">
     <div class="splash-logo">
-      <img src="logo.png" alt="logo">
+      <img src="logo.png" alt="logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" loading="eager">
+      <div class="splash-icon" style="display:none;"><i class="fas fa-clinic-medical"></i></div>
     </div>
     <div class="splash-title">العيادة العلمية</div>
     <div class="splash-subtitle">نظام إدارة المرضى والعيادة</div>
@@ -2313,7 +2465,7 @@
   <!-- Mobile Header -->
   <div class="mobile-header">
     <div class="logo-small">
-      <div class="logo-icon-small" id="mobileLogo"><img src="logo.png" alt="logo"></div>
+      <div class="logo-icon-small" id="mobileLogo"><img src="logo.png" alt="logo" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\'fas fa-clinic-medical\' style=\'font-size: 20px; color: var(--primary);\'></i>';" loading="lazy"></div>
       <h1>العيادة العلمية</h1>
     </div>
     <button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
@@ -2323,7 +2475,7 @@
   <!-- Login -->
   <div id="loginScreen">
     <div class="login-card">
-      <div class="login-logo" id="loginLogo"><img src="logo.png" alt="logo"></div>
+      <div class="login-logo" id="loginLogo"><img src="logo.png" alt="logo" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\'fas fa-clinic-medical\' style=\'font-size: 60px; color: var(--primary);\'></i>';" loading="eager"></div>
       <h1>العيادة العلمية</h1>
       <p style="font-size:13px;line-height:1.8;">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ<br>اللَّهُمَّ صَلِّ عَلَىٰ
         مُحَمَّدٍ وَآلِ مُحَمَّدٍ</p>
@@ -2340,7 +2492,7 @@
     <div class="sidebar" id="sidebar">
       <div class="sidebar-logo">
         <div class="logo-badge">
-          <div class="logo-icon" id="sidebarLogo"><img src="logo.png" alt="logo"></div>
+          <div class="logo-icon" id="sidebarLogo"><img src="logo.png" alt="logo" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\'fas fa-clinic-medical\' style=\'font-size: 32px; color: var(--primary);\'></i>';" loading="lazy"></div>
           <div class="logo-text">
             <h1>العيادة العلمية</h1>
             <p>نظام إدارة المرضى</p>
@@ -2732,15 +2884,14 @@
   </div>
 
   <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js" defer></script>
 
   <!-- Scripts -->
-  <script src="utils.js"></script>
-  <script src="data.js"></script>
-  <script src="auth.js"></script>
-  <script src="ui.js"></script>
-  <script src="visits.js"></script>
+  <script src="data.js" defer></script>
+  <script src="auth.js" defer></script>
+  <script src="ui.js" defer></script>
+  <script src="visits.js" defer></script>
 
   <script>
     // Firebase Config
@@ -3306,44 +3457,6 @@
   <button id="darkModeToggle" class="dark-mode-toggle" onclick="toggleDarkMode()" aria-label="تبديل الوضع المظلم" aria-pressed="false">
     <i class="fas fa-moon" aria-hidden="true"></i>
   </button>
-
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
-
-  <!-- Scripts -->
-  <script src="utils.js"></script>
-  <script src="data.js"></script>
-  <script src="auth.js"></script>
-  <script src="ui.js"></script>
-  <script src="visits.js"></script>
-
-  <script>
-    // Firebase Config
-    const firebaseConfig = {
-      apiKey: "AIzaSyBnoYXVsdFR8GN2oS4bLlfgW8MBE5O1qxk",
-      authDomain: "ilmiyya-clinic.firebaseapp.com",
-      databaseURL: "https://ilmiyya-clinic-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "ilmiyya-clinic",
-      storageBucket: "ilmiyya-clinic.firebasestorage.app",
-      messagingSenderId: "796968939529",
-      appId: "1:796968939529:web:54c255f8d1157a91d288d8"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    // Hide splash screen
-    setTimeout(() => {
-      const splash = document.getElementById('splashScreen');
-      if (splash) splash.style.display = 'none';
-    }, 1500);
-
-    // Initialize app
-    document.addEventListener('DOMContentLoaded', initAppWithSmartLogin);
-
-    // Login button
-    document.getElementById('btnLogin').addEventListener('click', handleLogin);
-  </script>
 </body>
 
 </html>
