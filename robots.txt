@@ -1,0 +1,26 @@
+# robots.txt - Clinic Management System
+# This file helps search engines understand how to crawl and index your site
+
+# Allow all crawlers to crawl the site
+User-agent: *
+Allow: /
+Allow: /index.html
+Allow: /offline.html
+
+# Disallow admin or private pages if you add them later
+# Disallow: /admin/
+# Disallow: /private/
+
+# Disallow crawling of certain paths
+Disallow: /api/
+Disallow: /*.json$
+Disallow: /*.js$
+
+# Define the sitemap
+Sitemap: https://ilmiyya-clinic.app/sitemap.xml
+
+# Crawl delay (optional - in seconds)
+Crawl-delay: 1
+
+# Request rate limit
+Request-rate: 1/10s
