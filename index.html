@@ -2309,6 +2309,16 @@
       <div class="topbar">
         <div class="topbar-title" id="topbarTitle">لوحة التحكم</div>
         <div class="topbar-right">
+          <!-- مؤشر حالة الاتصال -->
+          <span id="connectionStatus" style="font-size: 12px; color: #64748b; margin-right: 16px; padding: 8px 12px; background: var(--gray-50); border-radius: 8px; display: flex; align-items: center; gap: 6px;">
+            <i class="fas fa-wifi" style="color: #10b981;"></i> متصل
+          </span>
+          
+          <!-- زر تسجيل الخروج -->
+          <button class="btn-add" onclick="handleLogout()" style="background: #ef4444; padding: 8px 16px;">
+            <i class="fas fa-sign-out-alt"></i> خروج
+          </button>
+          
           <div class="date-badge" id="dateDisplay"></div>
           <button class="btn-add" id="btnAddVisit" onclick="openAddVisitForPatient(currentProfileId)"
             style="display:none; padding: 8px 16px;">
@@ -2758,7 +2768,99 @@
     // ============================================
     // AUTH
     // ============================================
-    function handleLogin() {
+    // نظام تسجيل الدخول الذكي
+    // ============================================
+    class AuthSession {
+      constructor() {
+        this.storageKey = 'clinic_session';
+        this.dataKey = 'clinic_data_offline';
+        this.lastSyncKey = 'clinic_last_sync';
+        this.maxOfflineTime = 30 * 24 * 60 * 60 * 1000; // 30 يوم
+      }
+
+      saveSession(clinicId, password, rememberMe = false) {
+        const session = {
+          clinicId: clinicId,
+          password: password,
+          loginTime: Date.now(),
+          rememberMe: rememberMe,
+          lastOnline: Date.now()
+        };
+        localStorage.setItem(this.storageKey, JSON.stringify(session));
+        return session;
+      }
+
+      getSession() {
+        const session = localStorage.getItem(this.storageKey);
+        return session ? JSON.parse(session) : null;
+      }
+
+      isSessionValid() {
+        const session = this.getSession();
+        if (!session) return false;
+        const timeSinceLastOnline = Date.now() - session.lastOnline;
+        if (timeSinceLastOnline > this.maxOfflineTime) {
+          this.clearSession();
+          return false;
+        }
+        return true;
+      }
+
+      saveOfflineData(data) {
+        localStorage.setItem(this.dataKey, JSON.stringify(data));
+        localStorage.setItem(this.lastSyncKey, Date.now().toString());
+      }
+
+      getOfflineData() {
+        const data = localStorage.getItem(this.dataKey);
+        return data ? JSON.parse(data) : null;
+      }
+
+      clearSession() {
+        localStorage.removeItem(this.storageKey);
+        localStorage.removeItem(this.dataKey);
+        localStorage.removeItem(this.lastSyncKey);
+      }
+
+      updateLastOnlineTime() {
+        const session = this.getSession();
+        if (session) {
+          session.lastOnline = Date.now();
+          localStorage.setItem(this.storageKey, JSON.stringify(session));
+        }
+      }
+    }
+
+    const authSession = new AuthSession();
+
+    // ============================================
+    // دالة الفتح الذكي
+    // ============================================
+    function initAppWithSmartLogin() {
+      if (authSession.isSessionValid()) {
+        console.log('✅ جلسة سابقة موجودة، فتح التطبيق مباشرة...');
+        const session = authSession.getSession();
+        clinicId = session.clinicId;
+        
+        if (navigator.onLine) {
+          console.log('🔄 جاري المزامنة مع قاعدة البيانات...');
+          syncWithOnlineDatabase(session.clinicId, session.password);
+        } else {
+          console.log('📴 بدون إنترنت، تحميل البيانات المحلية...');
+          loadOfflineData();
+        }
+        
+        showApp();
+      } else {
+        console.log('🔐 لا توجد جلسة، اعرض شاشة تسجيل الدخول');
+        document.getElementById('loginScreen').style.display = 'flex';
+      }
+    }
+
+    // ============================================
+    // دالة تسجيل الدخول المحسّنة
+    // ============================================
+    function handleLogin(rememberDevice = false) {
       console.log('Login function called');
       var id = document.getElementById('loginClinicId').value.trim().toLowerCase();
       var pass = document.getElementById('loginPassword').value;
@@ -2777,6 +2879,35 @@
 
       console.log('جاري الاتصال بالعيادة:', id);
 
+      // إذا كان بدون إنترنت، جرّب من البيانات المحلية
+      if (!navigator.onLine) {
+        const offlineData = authSession.getOfflineData();
+        if (offlineData && offlineData.clinicId === id) {
+          if (offlineData.password === pass) {
+            console.log('✅ تسجيل دخول من البيانات المحلية');
+            clinicId = id;
+            authSession.saveSession(id, pass, rememberDevice);
+            loadOfflineData();
+            showApp();
+            return;
+          } else {
+            errorEl.textContent = 'كلمة المرور غير صحيحة';
+            errorEl.style.display = 'block';
+            btn.disabled = false;
+            btn.innerHTML = 'دخول';
+            return;
+          }
+        } else {
+          errorEl.textContent = 'لا توجد بيانات محلية. يرجى الاتصال بالإنترنت لأول تسجيل دخول';
+          errorEl.style.display = 'block';
+          btn.disabled = false;
+          btn.innerHTML = 'دخول';
+          return;
+        }
+      }
+
+      // اتصل بقاعدة البيانات عند توفر الإنترنت
+
       db.ref('clinics/' + id).once('value').then(snap => {
         console.log('تم الاتصال، البيانات:', snap.val());
         const data = snap.val();
@@ -2793,15 +2924,28 @@
             },
             visits: { v1: { patientId: "p3", service: "حجامة - النوع الاول", date: today(), notes: "الم أسفل الظهر" } }
           };
+          // احفظ البيانات محلياً قبل upload
+          authSession.saveOfflineData({
+            clinicId: id,
+            password: pass,
+            data: initial,
+            lastSync: Date.now()
+          });
           return db.ref('clinics/' + id).set(initial);
         } else if (data.password !== pass) {
           throw new Error('wrong_password');
         }
+        // احفظ البيانات محلياً
+        authSession.saveOfflineData({
+          clinicId: id,
+          password: pass,
+          data: data,
+          lastSync: Date.now()
+        });
         return Promise.resolve();
       }).then(() => {
         clinicId = id;
-        localStorage.setItem('clinicId', id);
-        localStorage.setItem('clinicPassword', pass);
+        authSession.saveSession(id, pass, rememberDevice);
         showApp();
       }).catch(err => {
         console.error('خطأ:', err);
@@ -2816,10 +2960,112 @@
       });
     }
 
+    // ============================================
+    // المزامنة التلقائية مع قاعدة البيانات
+    // ============================================
+    function syncWithOnlineDatabase(clinicId, password) {
+      if (!navigator.onLine) {
+        console.log('📴 بدون إنترنت، لا يمكن المزامنة');
+        return;
+      }
+
+      console.log('🔄 جاري المزامنة مع قاعدة البيانات...');
+
+      db.ref('clinics/' + clinicId).once('value').then(snap => {
+        const data = snap.val();
+        
+        if (data && data.password === password) {
+          const dataToSave = {
+            clinicId: clinicId,
+            password: password,
+            data: data,
+            lastSync: Date.now()
+          };
+          authSession.saveOfflineData(dataToSave);
+          authSession.updateLastOnlineTime();
+          
+          console.log('✅ تمت المزامنة بنجاح');
+          showNotification('تحديث البيانات', {
+            body: 'تم التحديث من قاعدة البيانات بنجاح',
+            icon: 'my-new-icon-512.png'
+          });
+          return true;
+        } else {
+          console.error('❌ فشل المصادقة أثناء المزامنة');
+          return false;
+        }
+      }).catch(err => {
+        console.error('❌ خطأ في المزامنة:', err);
+      });
+    }
+
+    // ============================================
+    // تحميل البيانات المحلية
+    // ============================================
+    function loadOfflineData() {
+      const offlineData = authSession.getOfflineData();
+      
+      if (offlineData && offlineData.data) {
+        console.log('📦 تحميل البيانات المحلية', offlineData);
+        // البيانات المحلية ستُستخدم في العرض العادي
+      } else {
+        console.warn('⚠️ لا توجد بيانات محلية');
+      }
+    }
+
+    // ============================================
+    // تسجيل خروج محسّن
+    // ============================================
+    function handleLogout() {
+      if (confirm('هل تريد تسجيل الخروج؟\n\nستبقى البيانات محفوظة محلياً للاستخدام بدون إنترنت')) {
+        authSession.clearSession();
+        console.log('✅ تم تسجيل الخروج');
+        clinicId = null;
+        dbData = { patients: {}, visits: {} };
+        document.getElementById('appShell').style.display = 'none';
+        document.getElementById('loginScreen').style.display = 'flex';
+      }
+    }
+
     // Keyboard shortcuts
     document.getElementById('loginPassword').addEventListener('keypress', e => { if (e.key === 'Enter') handleLogin(); });
     document.getElementById('loginClinicId').addEventListener('keypress', e => { if (e.key === 'Enter') document.getElementById('loginPassword').focus(); });
-    document.getElementById('loginClinicId').addEventListener('keypress', e => { if (e.key === 'Enter') document.getElementById('loginPassword').focus(); });
+
+    // ============================================
+    // الاستماع لتغيرات حالة الإنترنت
+    // ============================================
+    window.addEventListener('online', () => {
+      console.log('🟢 عاد الإنترنت');
+      
+      const session = authSession.getSession();
+      if (session && clinicId) {
+        syncWithOnlineDatabase(session.clinicId, session.password);
+        updateConnectionStatus(true);
+      }
+    });
+
+    window.addEventListener('offline', () => {
+      console.log('🔴 فقدان الإنترنت');
+      showNotification('انقطاع الإنترنت', {
+        body: 'سيتم حفظ التغييرات محلياً ومزامنتها عند العودة',
+        icon: 'my-new-icon-512.png'
+      });
+      updateConnectionStatus(false);
+    });
+
+    // ============================================
+    // تحديث مؤشر حالة الاتصال
+    // ============================================
+    function updateConnectionStatus(isOnline) {
+      const statusEl = document.getElementById('connectionStatus');
+      if (statusEl) {
+        if (isOnline) {
+          statusEl.innerHTML = '<i class="fas fa-wifi" style="color: #10b981;"></i> متصل';
+        } else {
+          statusEl.innerHTML = '<i class="fas fa-wifi" style="color: #ef4444;"></i> بدون اتصال';
+        }
+      }
+    }
 
     // Escape to close modals
     document.addEventListener('keydown', e => {
@@ -2945,38 +3191,21 @@
       document.getElementById('loginScreen').style.display = 'flex';
     }
 
-    const savedId = localStorage.getItem('clinicId');
-    const savedPassword = localStorage.getItem('clinicPassword');
+    // ============================================
+    // بدء التطبيق بالنظام الذكي
+    // ============================================
+    
+    // تعيين القيم الافتراضية لشاشة التسجيل (اختياري للاختبار)
+    document.getElementById('loginClinicId').value = '12345';
+    document.getElementById('loginPassword').value = '12345';
 
-    if (savedId) {
-      document.getElementById('loginClinicId').value = savedId;
-      document.getElementById('loginPassword').value = savedPassword || '';
-
-      // Auto-login if credentials saved
-      if (savedPassword) {
-        setTimeout(() => {
-          handleLogin();
-        }, 500);
-      }
-    } else {
-      // Auto-fill default credentials and login
-      document.getElementById('loginClinicId').value = '12345';
-      document.getElementById('loginPassword').value = '12345';
-      setTimeout(() => {
-        handleLogin();
-      }, 800);
-    }
-
-    // Check if app is already installed (standalone mode)
-    if (window.matchMedia('(display-mode: standalone)').matches ||
-      window.navigator.standalone === true) {
-      // App is installed, try auto login
-      if (savedId && savedPassword) {
-        setTimeout(() => {
-          handleLogin();
-        }, 1000);
-      }
-    }
+    window.addEventListener('load', () => {
+      // استدعِ النظام الذكي
+      initAppWithSmartLogin();
+      
+      // حدّث مؤشر الاتصال
+      updateConnectionStatus(navigator.onLine);
+    });
 
     // ============================================
     // FIREBASE LISTENERS
