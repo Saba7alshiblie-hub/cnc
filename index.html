@@ -25,10 +25,59 @@
   <meta name="twitter:description" content="نظام إدارة العيادة والمرضى">
   <meta name="twitter:image" content="my-new-icon-512.png">
   
+  <!-- Structured Data for SEO -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "MedicalBusiness",
+    "name": "العيادة العلمية",
+    "description": "نظام متقدم لإدارة العيادة والمرضى مع تتبع الزيارات والعلاجات",
+    "url": "https://ilmiyya-clinic.app/",
+    "logo": "https://ilmiyya-clinic.app/logo.png",
+    "image": "https://ilmiyya-clinic.app/my-new-icon-512.png",
+    "address": {
+      "@type": "PostalAddress",
+      "addressCountry": "IQ"
+    },
+    "medicalSpecialty": [
+      "General Practice",
+      "Internal Medicine",
+      "Traditional Medicine"
+    ],
+    "availableService": [
+      {
+        "@type": "MedicalProcedure",
+        "name": "حجامة",
+        "description": "خدمة الحجامة التقليدية"
+      },
+      {
+        "@type": "MedicalTest",
+        "name": "قياس ضغط الدم",
+        "description": "قياس وتتبع ضغط الدم"
+      },
+      {
+        "@type": "MedicalTest",
+        "name": "مراقبة سكر الدم",
+        "description": "قياس وتتبع مستويات السكر في الدم"
+      }
+    ],
+    "applicationCategory": "HealthcareApplication",
+    "operatingSystem": "Web Browser",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    }
+  }
+  </script>
+  
   <!-- Apple Mobile Web App -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="العيادة">
+  
+  <!-- Security Headers -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://ilmiyya-clinic-default-rtdb.asia-southeast1.firebasedatabase.app wss://ilmiyya-clinic-default-rtdb.asia-southeast1.firebasedatabase.app; frame-ancestors 'none'; base-uri 'self'; form-action 'self';">
   
   <!-- Manifest and Icons -->
   <link rel="manifest" href="manifest.json">
@@ -92,6 +141,26 @@
       --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.1);
       --radius: 12px;
       --radius-lg: 20px;
+    }
+
+    /* Dark mode variables */
+    [data-theme="dark"] {
+      --primary: #38bdf8;
+      --primary-light: #60a5fa;
+      --primary-dark: #0ea5e9;
+      --gray-50: #0f172a;
+      --gray-100: #1e293b;
+      --gray-200: #334155;
+      --gray-300: #475569;
+      --gray-400: #64748b;
+      --gray-500: #94a3b8;
+      --gray-600: #cbd5e1;
+      --gray-700: #e2e8f0;
+      --gray-800: #f1f5f9;
+      --gray-900: #f8fafc;
+      --white: #0f172a;
+      --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3);
+      --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.3);
     }
 
     body {
@@ -2666,10 +2735,15 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
 
+  <!-- Scripts -->
+  <script src="utils.js"></script>
+  <script src="data.js"></script>
+  <script src="auth.js"></script>
+  <script src="ui.js"></script>
+  <script src="visits.js"></script>
+
   <script>
-    // ============================================
-    // CONFIG & STATE
-    // ============================================
+    // Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyBnoYXVsdFR8GN2oS4bLlfgW8MBE5O1qxk",
       authDomain: "ilmiyya-clinic.firebaseapp.com",
@@ -2679,342 +2753,600 @@
       messagingSenderId: "796968939529",
       appId: "1:796968939529:web:54c255f8d1157a91d288d8"
     };
-
     firebase.initializeApp(firebaseConfig);
-
-    // Hide splash screen after app loads
-    setTimeout(() => {
-      const splash = document.getElementById('splashScreen');
-      if (splash) {
-        splash.style.display = 'none';
-      }
-    }, 1500);
-
     const db = firebase.database();
 
-    let clinicId = null;
-    let dbData = { patients: {}, visits: {} };
-    let editPatientId = null;
-    let currentProfileId = null;
-    let visitPatientLock = null;
-    let deleteCallback = null;
+    // Hide splash screen
+    setTimeout(() => {
+      const splash = document.getElementById('splashScreen');
+      if (splash) splash.style.display = 'none';
+    }, 1500);
 
-    // ============================================
-    // UTILS
-    // ============================================
-    function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
-    const colors = ['#6366f1', '#8b5cf6', '#06b6d4', '#f472b6', '#10b981', '#f59e0b', '#ef4444', '#ec4899'];
-    function getColor(name) { let h = 0; for (let c of (name || '')) h = (h * 31 + c.charCodeAt(0)) & 0xffff; return colors[h % colors.length]; }
-    function getLetter(name) { return (name || '?').trim()[0]; }
-    function fmtDate(d) { if (!d) return '—'; return new Date(d + 'T00:00:00').toLocaleDateString('ar-IQ', { year: 'numeric', month: 'long', day: 'numeric' }); }
-    function today() { return new Date().toISOString().split('T')[0]; }
-    function showToast(msg, type = 'success') {
-      const t = document.getElementById('toast');
-      const icon = t.querySelector('i');
-      if (type === 'success') {
-        icon.className = 'fas fa-check-circle';
-      } else if (type === 'error') {
-        icon.className = 'fas fa-exclamation-circle';
-      }
-      t.querySelector('span').textContent = msg;
-      t.className = 'toast show ' + type;
+    // Initialize app
+    document.addEventListener('DOMContentLoaded', () => {
+      initLogo();
+      initAppWithSmartLogin();
+    });
 
-      // Clear any existing timeout
-      if (t.hideTimeout) clearTimeout(t.hideTimeout);
+    // Login button
+    document.getElementById('btnLogin').addEventListener('click', handleLogin);
+  </script>
+</head>
 
-      // Hide after 3 seconds
-      t.hideTimeout = setTimeout(() => {
-        t.classList.remove('show');
-      }, 3000);
-    }
-    function objToArray(obj) { return obj ? Object.keys(obj).map(k => ({ id: k, ...obj[k] })) : []; }
-    function getPatientName(patientId) {
-      const p = dbData.patients[patientId];
-      return p ? p.name : 'مريض محذوف';
-    }
-    function getServiceType(s) { if (!s) return 'other'; if (s.includes('حجامة')) return 'hijama'; if (s.includes('ختان')) return 'khitan'; if (s.includes('عملية')) return 'surgery'; if (s.includes('ضغط')) return 'bp'; return 'other'; }
-    function tick() {
-      const n = new Date();
-      document.getElementById('clockDisplay').textContent = n.toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' });
-      document.getElementById('dateDisplay').textContent = n.toLocaleDateString('ar-IQ', { weekday: 'long', month: 'long', day: 'numeric' });
-    }
-    setInterval(tick, 1000); tick();
+<body>
+  <!-- Splash Screen -->
+  <div id="splashScreen" class="splash-screen">
+    <div class="splash-content">
+      <div class="splash-logo">
+        <img src="logo.png" alt="العيادة العلمية" onerror="this.style.display='none'">
+        <div class="splash-icon"><i class="fas fa-clinic-medical"></i></div>
+      </div>
+      <h1>العيادة العلمية</h1>
+      <div class="splash-subtitle">نظام إدارة المرضى المتقدم</div>
+      <div class="splash-loader">
+        <div class="loader-bar"></div>
+      </div>
+    </div>
+  </div>
 
-    function handlePostLoginActions() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const action = urlParams.get('action');
+  <!-- Login Screen -->
+  <div id="loginScreen" class="login-screen">
+    <div class="login-container">
+      <div class="login-header">
+        <div id="loginLogo" class="login-logo" aria-hidden="true"></div>
+        <h2>العيادة العلمية</h2>
+        <p>نظام إدارة المرضى والعيادات</p>
+      </div>
 
-      if (!action) return;
+      <form class="login-form" onsubmit="event.preventDefault(); handleLogin();">
+        <div class="form-group">
+          <label for="loginClinicId">رقم العيادة</label>
+          <input type="text" id="loginClinicId" placeholder="أدخل رقم العيادة" required>
+        </div>
 
-      // Use a small timeout to ensure the UI is ready and modals can open
-      setTimeout(() => {
-        if (action === 'new-patient') {
-          openNewPatientModal();
-        } else if (action === 'today-visits') {
-          showPage('today');
-        }
-      }, 100);
+        <div class="form-group">
+          <label for="loginPassword">كلمة المرور</label>
+          <input type="password" id="loginPassword" placeholder="أدخل كلمة المرور" required>
+        </div>
 
-      // Clear the action from URL to avoid re-triggering on refresh
-      const newUrl = window.location.pathname;
-      window.history.replaceState({}, document.title, newUrl);
-    }
+        <div class="form-options">
+          <label class="checkbox-label">
+            <input type="checkbox" id="rememberDevice">
+            <span class="checkmark"></span>
+            تذكر الجهاز
+          </label>
+        </div>
 
-    // ============================================
-    // SIDEBAR
-    // ============================================
-    function toggleSidebar() {
-      document.getElementById('sidebar').classList.toggle('open');
-      document.querySelector('.sidebar-overlay').classList.toggle('open');
-    }
+        <button type="submit" id="btnLogin" class="btn-login" aria-label="تسجيل الدخول">
+          <i class="fas fa-sign-in-alt" aria-hidden="true"></i>
+          دخول
+        </button>
 
-    // ============================================
-    // AUTH
-    // ============================================
-    // نظام تسجيل الدخول المحسّن جداً
-    // ============================================
-    class AuthSession {
-      constructor() {
-        this.storageKey = 'clinic_session_v2';
-        this.dataKey = 'clinic_data_v2';
-        this.encryptionKey = 'clinic-secure-2024-' + window.location.hostname;
-      }
+        <div id="loginError" class="error-message" style="display: none;"></div>
+      </form>
 
-      encrypt(text) {
-        return CryptoJS.AES.encrypt(text, this.encryptionKey).toString();
-      }
+      <div class="login-footer">
+        <p>لإنشاء عيادة جديدة، أدخل رقم العيادة وكلمة مرور جديدة</p>
+      </div>
+    </div>
+  </div>
 
-      decrypt(ciphertext) {
-        try {
-          const bytes = CryptoJS.AES.decrypt(ciphertext, this.encryptionKey);
-          return bytes.toString(CryptoJS.enc.Utf8);
-        } catch (e) {
-          return null;
-        }
-      }
+  <!-- App Shell -->
+  <div id="appShell" class="app-shell" style="display: none;">
+    <!-- Top Bar -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <button id="sidebarToggle" class="btn-icon">
+          <i class="fas fa-bars"></i>
+        </button>
+        <div id="topbarTitle" class="topbar-title">لوحة التحكم</div>
+      </div>
 
-      // حفظ الجلسة بشكل دائم - مرة واحدة للأبد
-      saveSession(clinicId, password) {
-        const session = {
-          clinicId: clinicId,
-          password: password,
-          savedAt: Date.now(),
-          version: 2
-        };
-        const encrypted = this.encrypt(JSON.stringify(session));
-        localStorage.setItem(this.storageKey, encrypted);
-        sessionStorage.setItem(this.storageKey, encrypted);
-        console.log('✅ تم حفظ الجلسة بشكل دائم');
-        return session;
-      }
+      <div class="topbar-right">
+        <div id="connectionStatus" class="connection-status" aria-live="polite" aria-label="حالة الاتصال">
+          <i class="fas fa-wifi" aria-hidden="true"></i> متصل
+        </div>
+        <div id="syncDot" class="sync-dot ok" aria-hidden="true"></div>
+        <div id="syncStatusText" class="sync-status" aria-live="polite">متصل</div>
+        <button id="btnAddVisit" class="btn-add" style="display: none;" aria-label="إضافة زيارة">
+          <i class="fas fa-plus" aria-hidden="true"></i>
+          زيارة
+        </button>
+        <button id="btnAddPatient" class="btn-add" style="display: none;" aria-label="إضافة مريض">
+          <i class="fas fa-plus" aria-hidden="true"></i>
+          مريض
+        </button>
+      </div>
+    </div>
 
-      // استرجاع الجلسة من الحفظ الدائم
-      getSession() {
-        const encrypted = localStorage.getItem(this.storageKey);
-        if (!encrypted) return null;
-        
-        try {
-          const decrypted = this.decrypt(encrypted);
-          if (decrypted) {
-            return JSON.parse(decrypted);
-          }
-        } catch (e) {
-          console.error('خطأ في فك التشفير:', e);
-        }
-        return null;
-      }
+    <!-- Sidebar -->
+    <div id="sidebar" class="sidebar">
+      <div class="sidebar-overlay" onclick="document.getElementById('sidebar').classList.remove('open'); this.classList.remove('open');"></div>
+      <div class="sidebar-content">
+        <div class="sidebar-header">
+          <div id="sidebarLogo" class="sidebar-logo"></div>
+          <div class="sidebar-user">
+            <div class="user-name" id="userName">العيادة</div>
+            <div class="user-role">نظام إدارة المرضى</div>
+          </div>
+        </div>
 
-      // التحقق من وجود جلسة سابقة
-      hasValidSession() {
-        return this.getSession() !== null;
-      }
+        <nav class="sidebar-nav">
+          <a href="#" class="nav-item" id="nav-dash" onclick="showPage('dash')">
+            <i class="fas fa-tachometer-alt"></i>
+            <span>لوحة التحكم</span>
+          </a>
+          <a href="#" class="nav-item" id="nav-patients" onclick="showPage('patients')">
+            <i class="fas fa-users"></i>
+            <span>المرضى</span>
+            <span class="nav-badge" id="patientsBadge">0</span>
+          </a>
+          <a href="#" class="nav-item" id="nav-today" onclick="showPage('today')">
+            <i class="fas fa-calendar-day"></i>
+            <span>زيارات اليوم</span>
+          </a>
+          <a href="#" class="nav-item" id="nav-profile" onclick="showPage('profile')" style="display: none;">
+            <i class="fas fa-user"></i>
+            <span>ملف المريض</span>
+          </a>
+        </nav>
 
-      // حفظ البيانات الكاملة
-      saveData(clinicData) {
-        const encrypted = this.encrypt(JSON.stringify(clinicData));
-        localStorage.setItem(this.dataKey, encrypted);
-      }
+        <div class="sidebar-footer">
+          <button class="btn-secondary" onclick="exportData()">
+            <i class="fas fa-download"></i>
+            تصدير البيانات
+          </button>
+          <button class="btn-secondary" onclick="signOut()">
+            <i class="fas fa-sign-out-alt"></i>
+            تسجيل خروج
+          </button>
+        </div>
+      </div>
+    </div>
 
-      // استرجاع البيانات
-      getData() {
-        const encrypted = localStorage.getItem(this.dataKey);
-        if (!encrypted) return null;
-        
-        try {
-          const decrypted = this.decrypt(encrypted);
-          if (decrypted) {
-            return JSON.parse(decrypted);
-          }
-        } catch (e) {
-          console.error('خطأ في استرجاع البيانات:', e);
-        }
-        return null;
-      }
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Dashboard Page -->
+      <div id="pageDash" class="page active">
+        <div class="page-header">
+          <h1>لوحة التحكم</h1>
+          <p>نظرة عامة على العيادة والمرضى</p>
+        </div>
 
-      // تسجيل خروج كامل
-      logout() {
-        localStorage.removeItem(this.storageKey);
-        localStorage.removeItem(this.dataKey);
-        sessionStorage.removeItem(this.storageKey);
-        console.log('👋 تم تسجيل الخروج');
-      }
-    }
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i class="fas fa-users" aria-hidden="true"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-number" id="statTotal" aria-label="إجمالي عدد المرضى">0</div>
+              <div class="stat-label">إجمالي المرضى</div>
+            </div>
+          </div>
 
-    const authSession = new AuthSession();
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i class="fas fa-calendar-check" aria-hidden="true"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-number" id="statToday" aria-label="عدد زيارات اليوم">0</div>
+              <div class="stat-label">زيارات اليوم</div>
+            </div>
+          </div>
 
-    // ============================================
-    // دالة الفتح الذكي - فتح مباشر بدون تسجيل دخول متكرر
-    // ============================================
-    function initAppWithSmartLogin() {
-      console.log('🚀 بدء التطبيق...');
-      
-      // التحقق من وجود جلسة سابقة محفوظة
-      if (authSession.hasValidSession()) {
-        console.log('✅ جلسة محفوظة موجودة - الفتح المباشر');
-        const session = authSession.getSession();
-        const userData = authSession.getData();
-        
-        clinicId = session.clinicId;
-        
-        // تحميل البيانات من الحفظ المحلي
-        if (userData) {
-          dbData = userData;
-          loadOfflineData();
-          console.log('📦 تم تحميل البيانات المحلية');
-        }
-        
-        // محاولة المزامنة مع Firebase إذا كان متصل بالإنترنت
-        if (navigator.onLine) {
-          console.log('🔄 محاولة المزامنة مع Firebase...');
-          syncWithOnlineDatabase(session.clinicId, session.password);
-        }
-        
-        showApp();
-      } else {
-        // لا توجد جلسة - اعرض شاشة تسجيل الدخول
-        console.log('🔐 لا توجد جلسة محفوظة - اعرض شاشة التسجيل');
-        document.getElementById('loginScreen').style.display = 'flex';
-      }
-    }
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i class="fas fa-clipboard-list" aria-hidden="true"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-number" id="statVisits" aria-label="إجمالي عدد الزيارات">0</div>
+              <div class="stat-label">إجمالي الزيارات</div>
+            </div>
+          </div>
 
-    // ============================================
-    // دالة تسجيل الدخول المحسّنة
-    // ============================================
-    function handleLogin() {
-      const id = document.getElementById('loginClinicId').value.trim().toLowerCase();
-      const pass = document.getElementById('loginPassword').value;
-      const errorEl = document.getElementById('loginError');
-      const btn = document.getElementById('btnLogin');
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i class="fas fa-clock" aria-hidden="true"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-number" id="statReminders" aria-label="عدد مواعيد الحجامة">0</div>
+              <div class="stat-label">مواعيد الحجامة</div>
+            </div>
+          </div>
+        </div>
 
-      console.log('🔐 محاولة تسجيل دخول:', id);
+        <div class="section">
+          <div class="section-header">
+            <h2>الزيارات الأخيرة</h2>
+          </div>
+          <div id="recentVisitsList" class="recent-visits">
+            <!-- Recent visits will be populated here -->
+          </div>
+        </div>
+      </div>
 
-      if (!id || !pass) {
-        showError(errorEl, 'يرجى إدخال المعرف وكلمة المرور');
-        return;
-      }
+      <!-- Patients Page -->
+      <div id="pagePatients" class="page">
+        <div class="page-header">
+          <div class="page-header-top">
+            <h1>المرضى</h1>
+            <div class="search-box">
+              <i class="fas fa-search"></i>
+              <input type="text" id="searchInput" placeholder="البحث في المرضى...">
+            </div>
+          </div>
+          <p id="patientCount">0 مريض</p>
+        </div>
 
-      btn.disabled = true;
-      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحقق...';
-      errorEl.style.display = 'none';
+        <div id="patientsEmpty" class="empty-state" style="display: none;">
+          <div class="empty-icon">
+            <i class="fas fa-users"></i>
+          </div>
+          <p>لا يوجد مرضى مسجلين</p>
+          <button class="btn-primary" onclick="openNewPatientModal()">
+            <i class="fas fa-plus"></i>
+            إضافة مريض جديد
+          </button>
+        </div>
 
-      // إذا كان بدون إنترنت
-      if (!navigator.onLine) {
-        handleOfflineLogin(id, pass, errorEl, btn);
-        return;
-      }
+        <div class="patients-table-container">
+          <table class="patients-table" role="table" aria-label="جدول المرضى">
+            <thead>
+              <tr>
+                <th>المريض</th>
+                <th>الهاتف</th>
+                <th>العمر</th>
+                <th>الأمراض</th>
+                <th>الزيارات</th>
+                <th>آخر زيارة</th>
+                <th>الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="patientsTableBody" role="rowgroup">
+              <!-- Patients will be populated here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-      // الاتصال بـ Firebase
-      db.ref('clinics/' + id).once('value').then(snap => {
-        const data = snap.val();
-        
-        if (data === null) {
-          // إنشاء عيادة جديدة
-          createNewClinic(id, pass, errorEl, btn);
-        } else if (data.password === pass) {
-          // تسجيل دخول ناجح
-          clinicId = id;
-          dbData = {
-            patients: data.patients || {},
-            visits: data.visits || {}
-          };
-          
-          // حفظ الجلسة والبيانات بشكل دائم
-          authSession.saveSession(id, pass);
-          authSession.saveData(dbData);
-          
-          loadOfflineData();
-          showApp();
-          document.getElementById('loginScreen').style.display = 'none';
-        } else {
-          showError(errorEl, '❌ كلمة المرور غير صحيحة');
-          btn.disabled = false;
-          btn.innerHTML = 'دخول';
-        }
-      }).catch(err => {
-        console.error('خطأ Firebase:', err);
-        showError(errorEl, '❌ خطأ في الاتصال. جرب لاحقاً.');
-        btn.disabled = false;
-        btn.innerHTML = 'دخول';
-      });
-    }
+      <!-- Today Page -->
+      <div id="pageToday" class="page">
+        <div class="page-header">
+          <h1>زيارات اليوم</h1>
+          <p>الزيارات المسجلة لهذا اليوم</p>
+        </div>
 
-    function handleOfflineLogin(id, pass, errorEl, btn) {
-      const userData = authSession.getData();
-      
-      if (userData && userData.clinicId === id && userData.password === pass) {
-        console.log('✅ تسجيل دخول بدون نت');
-        clinicId = id;
-        dbData = userData;
-        authSession.saveSession(id, pass);
-        loadOfflineData();
-        showApp();
-        document.getElementById('loginScreen').style.display = 'none';
-      } else {
-        showError(errorEl, '❌ بدون إنترنت - لا توجد بيانات محفوظة');
-        btn.disabled = false;
-        btn.innerHTML = 'دخول';
-      }
-    }
+        <div id="todayEmpty" class="empty-state" style="display: none;">
+          <div class="empty-icon">
+            <i class="fas fa-calendar-day"></i>
+          </div>
+          <p>لا توجد زيارات لهذا اليوم</p>
+        </div>
 
-    function createNewClinic(id, pass, errorEl, btn) {
-      const initial = {
-        clinicId: id,
-        password: pass,
-        createdAt: Date.now(),
-        patients: {
-          p1: { name: "محمد حمزة", phone: "07733341855", diseases: [], meds: "", history: "", notes: "" },
-          p2: { name: "علي جابر", phone: "07865161719", diseases: [], meds: "", history: "", notes: "" },
-          p3: { name: "كاظم محمد كامل", phone: "07818429336", diseases: ["ضغط دم"], meds: "لا يوجد", history: "غير رياضي", notes: "" }
-        },
-        visits: { v1: { patientId: "p3", service: "حجامة - النوع الأول", date: today(), notes: "ألم أسفل الظهر" } }
-      };
+        <div id="todayGrid" class="today-grid">
+          <!-- Today's visits will be populated here -->
+        </div>
+      </div>
 
-      db.ref('clinics/' + id).set(initial).then(() => {
-        console.log('✅ عيادة جديدة منشأة');
-        clinicId = id;
-        dbData = initial;
-        
-        authSession.saveSession(id, pass);
-        authSession.saveData(initial);
-        
-        loadOfflineData();
-        showApp();
-        document.getElementById('loginScreen').style.display = 'none';
-      }).catch(err => {
-        console.error('خطأ في إنشاء عيادة:', err);
-        showError(errorEl, '❌ خطأ في الإنشاء');
-        btn.disabled = false;
-        btn.innerHTML = 'دخول';
-      });
-    }
+      <!-- Profile Page -->
+      <div id="pageProfile" class="page">
+        <div id="profileContent">
+          <!-- Profile content will be populated here -->
+        </div>
+      </div>
+    </div>
 
-    function showError(el, msg) {
-      el.textContent = msg;
-      el.style.display = 'block';
-    }
-          return;
-        }
-      }
+    <!-- FAB -->
+    <button id="fabBtn" class="fab" onclick="openNewPatientModal()">
+      <i class="fas fa-plus"></i>
+    </button>
+
+    <!-- Bottom Navigation (Mobile) -->
+    <div class="bottom-nav">
+      <button class="bottom-nav-item active" onclick="showPage('dash')">
+        <i class="fas fa-tachometer-alt"></i>
+        <span>الرئيسية</span>
+      </button>
+      <button class="bottom-nav-item" onclick="showPage('patients')">
+        <i class="fas fa-users"></i>
+        <span>المرضى</span>
+      </button>
+      <button class="bottom-nav-item" onclick="showPage('today')">
+        <i class="fas fa-calendar-day"></i>
+        <span>اليوم</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Modals -->
+  <!-- Add/Edit Patient Modal -->
+  <div id="modalAddPatient" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="patientModalTitle">مريض جديد</h3>
+        <button class="modal-close" onclick="closeModal('modalAddPatient')">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <form onsubmit="event.preventDefault(); savePatient();" role="form" aria-label="نموذج إضافة مريض جديد">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="inp_name">اسم المريض *</label>
+              <input type="text" id="inp_name" required aria-required="true">
+              <div id="err_name" class="err-msg">الاسم مطلوب</div>
+            </div>
+
+            <div class="form-group">
+              <label for="inp_phone">رقم الهاتف</label>
+              <input type="tel" id="inp_phone">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="inp_age">سنة الميلاد</label>
+              <input type="number" id="inp_age" min="1900" max="2025" oninput="calculateAge()">
+              <div id="ageDisplay" class="age-display"></div>
+            </div>
+
+            <div class="form-group">
+              <label for="inp_meds">الأدوية</label>
+              <input type="text" id="inp_meds" placeholder="الأدوية المستخدمة">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="inp_history">التاريخ الشخصي</label>
+            <textarea id="inp_history" rows="3" placeholder="التاريخ الطبي والشكاوى"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>الأمراض المزمنة</label>
+            <div id="chronicCbs" class="checkbox-grid">
+              <div class="cb-item" data-value="ضغط دم">
+                <div class="cb-box"><i class="fas fa-check"></i></div>
+                <span>ضغط دم</span>
+              </div>
+              <div class="cb-item" data-value="سكري">
+                <div class="cb-box"><i class="fas fa-check"></i></div>
+                <span>سكري</span>
+              </div>
+              <div class="cb-item" data-value="قلب">
+                <div class="cb-box"><i class="fas fa-check"></i></div>
+                <span>قلب</span>
+              </div>
+              <div class="cb-item" data-value="ربو">
+                <div class="cb-box"><i class="fas fa-check"></i></div>
+                <span>ربو</span>
+              </div>
+              <div class="cb-item" data-value="كلى">
+                <div class="cb-box"><i class="fas fa-check"></i></div>
+                <span>كلى</span>
+              </div>
+              <div class="cb-item" data-value="كبد">
+                <div class="cb-box"><i class="fas fa-check"></i></div>
+                <span>كبد</span>
+              </div>
+              <div class="cb-item" data-value="غدة درقية">
+                <div class="cb-box"><i class="fas fa-check"></i></div>
+                <span>غدة درقية</span>
+              </div>
+              <div class="cb-item" data-value="أخرى">
+                <div class="cb-box"><i class="fas fa-check"></i></div>
+                <span>أخرى</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="inp_notes">ملاحظات إضافية</label>
+            <textarea id="inp_notes" rows="2" placeholder="ملاحظات إضافية"></textarea>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn-secondary" onclick="closeModal('modalAddPatient')">إلغاء</button>
+            <button type="submit" class="btn-primary">حفظ</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Visit Modal -->
+  <div id="modalAddVisit" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>زيارة جديدة</h3>
+        <button class="modal-close" onclick="closeModal('modalAddVisit')">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <form onsubmit="event.preventDefault(); saveVisit();">
+          <div id="visitPatientSelectWrap" class="form-group">
+            <label for="inp_visitPatient">المريض *</label>
+            <select id="inp_visitPatient" required>
+              <option value="">— اختر المريض —</option>
+            </select>
+            <div id="err_visitPatient" class="err-msg">يجب اختيار مريض</div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="inp_visitService">الخدمة *</label>
+              <select id="inp_visitService" onchange="toggleServiceFields()" required>
+                <option value="">— اختر الخدمة —</option>
+                <option value="حجامة">حجامة</option>
+                <option value="قياس ضغط الدم">قياس ضغط الدم</option>
+                <option value="مراقبة سكر الدم">مراقبة سكر الدم</option>
+                <option value="كشف عام">كشف عام</option>
+                <option value="علاج">علاج</option>
+                <option value="استشارة">استشارة</option>
+              </select>
+              <div id="err_visitService" class="err-msg">يجب اختيار خدمة</div>
+            </div>
+
+            <div class="form-group">
+              <label for="inp_visitDate">التاريخ *</label>
+              <input type="date" id="inp_visitDate" value="" required>
+              <div id="err_visitDate" class="err-msg">التاريخ مطلوب</div>
+            </div>
+          </div>
+
+          <div id="hijamaTypeWrap" class="form-group" style="display: none;">
+            <label for="inp_hijamaType">نوع الحجامة</label>
+            <select id="inp_hijamaType">
+              <option value="النوع الأول">النوع الأول</option>
+              <option value="النوع الثاني">النوع الثاني</option>
+              <option value="النوع الثالث">النوع الثالث</option>
+            </select>
+          </div>
+
+          <div id="bpFields" class="form-group" style="display: none;">
+            <label>قياس ضغط الدم</label>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="inp_bpSystolic">الانقباضي (mmHg)</label>
+                <input type="number" id="inp_bpSystolic" placeholder="120" oninput="autoCalcBP()">
+              </div>
+              <div class="form-group">
+                <label for="inp_bpDiastolic">الانبساطي (mmHg)</label>
+                <input type="number" id="inp_bpDiastolic" placeholder="80" oninput="autoCalcBP()">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="inp_bpPulse">النبض (ضربات/دقيقة)</label>
+                <input type="number" id="inp_bpPulse" placeholder="72">
+              </div>
+              <div class="form-group">
+                <label for="inp_bpStatus">الحالة</label>
+                <select id="inp_bpStatus">
+                  <option value="optimal">مثالي</option>
+                  <option value="normal">طبيعي</option>
+                  <option value="high_normal">طبيعي مرتفع</option>
+                  <option value="grade1">ارتفاع درجة أولى</option>
+                  <option value="grade2">ارتفاع درجة ثانية</option>
+                  <option value="grade3">ارتفاع درجة ثالثة</option>
+                  <option value="isolated">ارتفاع انقباضي منعزل</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div id="bsFields" class="form-group" style="display: none;">
+            <label>قياس سكر الدم</label>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="inp_bsLevel">مستوى السكر (mg/dL)</label>
+                <input type="number" id="inp_bsLevel" step="0.1" placeholder="100">
+              </div>
+              <div class="form-group">
+                <label for="inp_bsMeasureTime">وقت القياس</label>
+                <input type="time" id="inp_bsMeasureTime">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="inp_bsContext">الحالة</label>
+                <select id="inp_bsContext">
+                  <option value="صائم">صائم</option>
+                  <option value="بعد الأكل">بعد الأكل</option>
+                  <option value="عشوائي">عشوائي</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="inp_bsTimeAfterMeal">المدة بعد الأكل (دقائق)</label>
+                <input type="number" id="inp_bsTimeAfterMeal" placeholder="120">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="inp_visitDetails">التفاصيل والملاحظات</label>
+            <textarea id="inp_visitDetails" rows="4" placeholder="تفاصيل الزيارة والملاحظات الطبية"></textarea>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn-secondary" onclick="closeModal('modalAddVisit')">إلغاء</button>
+            <button type="submit" class="btn-primary">حفظ الزيارة</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Modal -->
+  <div id="modalConfirm" class="modal-overlay">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h3 id="modalConfirmTitle">تأكيد</h3>
+        <button class="modal-close" onclick="closeModal('modalConfirm')">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p id="confirmMsg">هل أنت متأكد؟</p>
+        <div class="modal-actions">
+          <button class="btn-secondary" onclick="closeModal('modalConfirm')">إلغاء</button>
+          <button id="confirmBtn" class="btn-danger">تأكيد</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notifications -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Dark Mode Toggle -->
+  <button id="darkModeToggle" class="dark-mode-toggle" onclick="toggleDarkMode()" aria-label="تبديل الوضع المظلم" aria-pressed="false">
+    <i class="fas fa-moon" aria-hidden="true"></i>
+  </button>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
+
+  <!-- Scripts -->
+  <script src="utils.js"></script>
+  <script src="data.js"></script>
+  <script src="auth.js"></script>
+  <script src="ui.js"></script>
+  <script src="visits.js"></script>
+
+  <script>
+    // Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyBnoYXVsdFR8GN2oS4bLlfgW8MBE5O1qxk",
+      authDomain: "ilmiyya-clinic.firebaseapp.com",
+      databaseURL: "https://ilmiyya-clinic-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "ilmiyya-clinic",
+      storageBucket: "ilmiyya-clinic.firebasestorage.app",
+      messagingSenderId: "796968939529",
+      appId: "1:796968939529:web:54c255f8d1157a91d288d8"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // Hide splash screen
+    setTimeout(() => {
+      const splash = document.getElementById('splashScreen');
+      if (splash) splash.style.display = 'none';
+    }, 1500);
+
+    // Initialize app
+    document.addEventListener('DOMContentLoaded', initAppWithSmartLogin);
+
+    // Login button
+    document.getElementById('btnLogin').addEventListener('click', handleLogin);
+  </script>
+</body>
+
+</html>
 
       // اتصل بقاعدة البيانات عند توفر الإنترنت
 
