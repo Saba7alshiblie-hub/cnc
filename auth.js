@@ -10,6 +10,11 @@ class AuthSession {
     return CryptoJS.AES.encrypt(text, this.encryptionKey).toString();
   }
 
+  decrypt(cipherText) {
+    const bytes = CryptoJS.AES.decrypt(cipherText, this.encryptionKey);
+    return bytes.toString(CryptoJS.enc.Utf8);
+  }
+
   saveSession(clinicId, password) {
     const session = {
       clinicId: clinicId,
@@ -124,7 +129,7 @@ function initAuth() {
  * التعامل مع تسجيل الدخول باستخدام "معرف العيادة"
  */
 function handleLogin() {
-  const id = document.getElementById('loginClinicId').value.trim().toLowerCase();
+  const id = document.getElementById('loginClinicId').value.trim();
   const pass = document.getElementById('loginPassword').value;
   const errorEl = document.getElementById('loginError');
   const btn = document.getElementById('btnLogin');
