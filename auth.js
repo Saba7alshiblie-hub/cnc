@@ -80,39 +80,69 @@ class AuthSession {
 
 const authSession = new AuthSession();
 
-function initAppWithSmartLogin() {
-  console.log('🚀 بدء التطبيق...');
-  if (authSession.hasValidSession()) {
-    console.log('✅ جلسة محفوظة موجودة - الفتح المباشر');
-    const session = authSession.getSession();
-    const userData = authSession.getData();
-    clinicId = session.clinicId;
-    if (userData) {
-      dbData = userData;
-      loadOfflineData();
-      console.log('📦 تم تحميل البيانات المحلية');
+/**
+ * يبدأ هذا التابع عملية المصادقة عند بدء تشغيل التطبيق.
+ * يتحقق من وجود مستخدم مسجل دخوله عبر Firebase أولاً،
+ * ثم يعود للتحقق من الجلسة القديمة (معرف العيادة).
+ */
+function initAuth() {
+  console.log('🚀 بدء تهيئة المصادقة...');
+
+  firebase.auth().onAuthStateChanged(user => {
+    const splash = document.getElementById('splashScreen');
+    if (user) {
+      // المستخدم مسجل دخوله عبر Firebase (بريد إلكتروني أو جوجل)
+      console.log('🔥 مستخدم Firebase مسجل الدخول:', user.uid);
+      // الدالة `syncWithOnlineDatabase` ستتولى عرض التطبيق
+      syncWithOnlineDatabase(user.uid, null); // لا حاجة لكلمة مرور هنا
+    } else {
+      // لا يوجد مستخدم Firebase، تحقق من الجلسة القديمة
+      console.log('🔥 لا يوجد مستخدم Firebase. التحقق من الجلسة القديمة...');
+      const session = authSession.getSession();
+      if (session && session.clinicId) {
+        console.log('✅ جلسة قديمة موجودة:', session.clinicId);
+        const userData = authSession.getData();
+        clinicId = session.clinicId;
+        if (userData) {
+          dbData = userData;
+          loadOfflineData();
+          console.log('📦 تم تحميل البيانات المحلية');
+        }
+        if (navigator.onLine) {
+          console.log('🔄 محاولة المزامنة...');
+          syncWithOnlineDatabase(session.clinicId, session.password);
+        } else if (userData) {
+          console.log('🔌 وضع عدم الاتصال، عرض البيانات المحلية.');
+          showApp();
+        } else {
+          // غير متصل بالإنترنت ولا توجد بيانات مخبأة
+          if (splash) splash.style.display = 'none';
+          document.getElementById('loginScreen').style.display = 'flex';
+        }
+      } else {
+        // لا توجد أي جلسات على الإطلاق
+        console.log('🔐 لا توجد جلسة، عرض شاشة تسجيل الدخول.');
+        if (splash) splash.style.display = 'none';
+        document.getElementById('loginScreen').style.display = 'flex';
+      }
     }
-    if (navigator.onLine) {
-      console.log('🔄 محاولة المزامنة مع Firebase...');
-      syncWithOnlineDatabase(session.clinicId, session.password);
-    }
-    showApp();
-  } else {
-    console.log('🔐 لا توجد جلسة محفوظة - اعرض شاشة التسجيل');
-    document.getElementById('loginScreen').style.display = 'flex';
-  }
+  });
 }
 
+/**
+ * التعامل مع تسجيل الدخول باستخدام "معرف العيادة"
+ */
 function handleLogin() {
   const id = document.getElementById('loginClinicId').value.trim().toLowerCase();
   const pass = document.getElementById('loginPassword').value;
   const errorEl = document.getElementById('loginError');
   const btn = document.getElementById('btnLogin');
+  const rememberMe = document.getElementById('rememberMe').checked;
 
   console.log('🔐 محاولة تسجيل دخول:', id);
 
   if (!id || !pass) {
-    showError(errorEl, 'يرجى إدخال المعرف وكلمة المرور');
+    showError(errorEl, 'يرجى إدخال معرف العيادة وكلمة المرور.');
     return;
   }
 
@@ -120,42 +150,52 @@ function handleLogin() {
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحقق...';
   errorEl.style.display = 'none';
 
+  // التعامل مع تسجيل الدخول في وضع عدم الاتصال
   if (!navigator.onLine) {
     handleOfflineLogin(id, pass, errorEl, btn);
     return;
   }
 
+  // التحقق من Firebase
   db.ref('clinics/' + id).once('value').then(snap => {
     const data = snap.val();
     if (data === null) {
-      createNewClinic(id, pass, errorEl, btn);
+      // إصلاح أمني: منع إنشاء عيادة جديدة تلقائيًا
+      showError(errorEl, '❌ معرف العيادة غير موجود.');
+      btn.disabled = false;
+      btn.innerHTML = 'دخول';
     } else if (data.password === pass) {
+      console.log('✅ تم التحقق من كلمة المرور بنجاح');
       clinicId = id;
       dbData = {
         patients: data.patients || {},
         visits: data.visits || {}
       };
-      authSession.saveSession(id, pass);
+      if (rememberMe) {
+        authSession.saveSession(id, pass);
+      }
       authSession.saveData(dbData);
       loadOfflineData();
       showApp();
       document.getElementById('loginScreen').style.display = 'none';
     } else {
-      showError(errorEl, '❌ كلمة المرور غير صحيحة');
+      showError(errorEl, '❌ كلمة المرور غير صحيحة.');
       btn.disabled = false;
       btn.innerHTML = 'دخول';
     }
   }).catch(err => {
     console.error('خطأ Firebase:', err);
-    showError(errorEl, '❌ خطأ في الاتصال. جرب لاحقاً.');
+    showError(errorEl, '❌ خطأ في الاتصال بالخادم. يرجى المحاولة مرة أخرى.');
     btn.disabled = false;
     btn.innerHTML = 'دخول';
   });
 }
 
 function handleOfflineLogin(id, pass, errorEl, btn) {
-  const userData = authSession.getData();
-  if (userData && userData.clinicId === id && userData.password === pass) {
+  const session = authSession.getSession();
+  // إصلاح: التحقق من "الجلسة" بدلاً من "البيانات" لكلمات المرور
+  if (session && session.clinicId === id && session.password === pass) {
+    const userData = authSession.getData();
     console.log('✅ تسجيل دخول بدون نت');
     clinicId = id;
     dbData = userData;
@@ -164,54 +204,131 @@ function handleOfflineLogin(id, pass, errorEl, btn) {
     showApp();
     document.getElementById('loginScreen').style.display = 'none';
   } else {
-    showError(errorEl, '❌ بدون إنترنت - لا توجد بيانات محفوظة');
+    showError(errorEl, '❌ وضع عدم الاتصال: لا يمكن التحقق من البيانات أو لا توجد جلسة محفوظة.');
     btn.disabled = false;
     btn.innerHTML = 'دخول';
   }
 }
 
-function createNewClinic(id, pass, errorEl, btn) {
-  const initial = {
-    clinicId: id,
-    password: pass,
-    createdAt: Date.now(),
-    patients: {
-      p1: { name: "محمد حمزة", phone: "07733341855", diseases: [], meds: "", history: "", notes: "" },
-      p2: { name: "علي جابر", phone: "07865161719", diseases: [], meds: "", history: "", notes: "" },
-      p3: { name: "كاظم محمد كامل", phone: "07818429336", diseases: ["ضغط دم"], meds: "لا يوجد", history: "غير رياضي", notes: "" }
-    },
-    visits: { v1: { patientId: "p3", service: "حجامة - النوع الأول", date: today(), notes: "ألم أسفل الظهر" } }
-  };
-
-  db.ref('clinics/' + id).set(initial).then(() => {
-    console.log('✅ عيادة جديدة منشأة');
-    clinicId = id;
-    dbData = initial;
-    authSession.saveSession(id, pass);
-    authSession.saveData(initial);
-    loadOfflineData();
-    showApp();
-    document.getElementById('loginScreen').style.display = 'none';
-  }).catch(err => {
-    console.error('خطأ في إنشاء العيادة:', err);
-    showError(errorEl, '❌ خطأ في إنشاء العيادة');
-    btn.disabled = false;
-    btn.innerHTML = 'دخول';
-  });
-}
-
 function signOut() {
+  // تسجيل الخروج من Firebase Auth
+  firebase.auth().signOut().catch(error => {
+    console.error('خطأ في تسجيل الخروج من Firebase', error);
+  });
+
+  // حذف الجلسة القديمة
   authSession.logout();
   location.reload();
 }
 
 function handleLogout() {
-  if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
-    signOut();
-  }
+  showConfirm('هل أنت متأكد من أنك تريد تسجيل الخروج؟', signOut);
 }
 
 function showError(el, msg) {
   el.textContent = msg;
   el.style.display = 'block';
+}
+
+// --- دوال المصادقة باستخدام Firebase Auth ---
+
+function handleEmailRegister() {
+  const email = document.getElementById('loginEmail').value;
+  const password = document.getElementById('loginEmailPassword').value;
+  const errorEl = document.getElementById('loginError');
+
+  if (!email || !password) {
+    return showError(errorEl, 'يرجى إدخال البريد الإلكتروني وكلمة المرور.');
+  }
+  if (password.length < 6) {
+    return showError(errorEl, 'يجب أن تكون كلمة المرور 6 أحرف على الأقل.');
+  }
+
+  firebase.auth().createUserWithEmailAndPassword(email, password)
+    .then(userCredential => initializeClinicForNewUser(userCredential.user.uid))
+    .catch(error => {
+      console.error('خطأ في التسجيل:', error.code, error.message);
+      if (error.code === 'auth/email-already-in-use') {
+        showError(errorEl, '❌ هذا البريد الإلكتروني مسجل بالفعل.');
+      } else {
+        showError(errorEl, '❌ حدث خطأ أثناء التسجيل.');
+      }
+    });
+}
+
+function handleEmailLogin() {
+  const email = document.getElementById('loginEmail').value;
+  const password = document.getElementById('loginEmailPassword').value;
+  const errorEl = document.getElementById('loginError');
+
+  if (!email || !password) {
+    return showError(errorEl, 'يرجى إدخال البريد الإلكتروني وكلمة المرور.');
+  }
+
+  firebase.auth().signInWithEmailAndPassword(email, password)
+    .then(userCredential => {
+      console.log('✅ تم تسجيل الدخول:', userCredential.user.uid);
+      // سيتم التعامل مع عرض التطبيق بواسطة `onAuthStateChanged` -> `initAuth`
+    })
+    .catch(error => {
+      console.error('خطأ في تسجيل الدخول:', error.code, error.message);
+      if (['auth/user-not-found', 'auth/wrong-password', 'auth/invalid-credential'].includes(error.code)) {
+        showError(errorEl, '❌ البريد الإلكتروني أو كلمة المرور غير صحيحة.');
+      } else {
+        showError(errorEl, '❌ حدث خطأ أثناء تسجيل الدخول.');
+      }
+    });
+}
+
+function handleGoogleLogin() {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  firebase.auth().signInWithPopup(provider)
+    .then(result => {
+      const user = result.user;
+      console.log('✅ تم تسجيل الدخول عبر جوجل:', user.uid);
+      if (result.additionalUserInfo.isNewUser) {
+        console.log('✅ مستخدم جوجل جديد، جاري إنشاء العيادة...');
+        initializeClinicForNewUser(user.uid);
+      } else {
+        // سيتم التعامل مع المستخدم الحالي بواسطة `onAuthStateChanged`
+        console.log('✅ مستخدم جوجل عائد.');
+      }
+    }).catch(error => {
+      console.error('خطأ في تسجيل الدخول عبر جوجل:', error.code, error.message);
+      showError(document.getElementById('loginError'), '❌ فشل تسجيل الدخول باستخدام جوجل.');
+    });
+}
+
+/**
+ * يقوم بإنشاء هيكل بيانات مبدئي لعيادة جديدة لمستخدم Firebase جديد
+ * @param {string} userId - معرف المستخدم من Firebase Auth
+ */
+function initializeClinicForNewUser(userId) {
+  const initialData = {
+    owner: userId,
+    createdAt: firebase.database.ServerValue.TIMESTAMP,
+    patients: {},
+    visits: {}
+  };
+
+  db.ref('clinics/' + userId).set(initialData)
+    .then(() => {
+      console.log('✅ عيادة جديدة منشأة للمستخدم:', userId);
+      clinicId = userId;
+      dbData = initialData;
+      authSession.saveData(dbData); // حفظ البيانات الفارغة محليًا
+      loadOfflineData();
+      showApp();
+      document.getElementById('loginScreen').style.display = 'none';
+    })
+    .catch(err => {
+      console.error('خطأ في إنشاء العيادة:', err);
+      showError(document.getElementById('loginError'), '❌ خطأ في إعداد العيادة الجديدة.');
+    });
+}
+
+function handleLogout() {
+  if (confirm('هل أنت متأكد من أنك تريد تسجيل الخروج؟')) {
+    signOut();
+  }
 }

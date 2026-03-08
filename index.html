@@ -10,7 +10,7 @@
   <meta name="author" content="نظام إدارة العيادة">
   <meta name="robots" content="index, follow">
   <meta name="language" content="ar">
-  
+
   <!-- Open Graph Meta Tags -->
   <meta property="og:title" content="العيادة العلمية">
   <meta property="og:description" content="نظام متقدم لإدارة العيادة والمرضى مع تتبع الزيارات والعلاجات">
@@ -18,13 +18,13 @@
   <meta property="og:url" content="https://ilmiyya-clinic.app/">
   <meta property="og:image" content="my-new-icon-512.png">
   <meta property="og:locale" content="ar_SA">
-  
+
   <!-- Twitter Meta Tags -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="العيادة العلمية">
   <meta name="twitter:description" content="نظام إدارة العيادة والمرضى">
   <meta name="twitter:image" content="my-new-icon-512.png">
-  
+
   <!-- Structured Data for SEO -->
   <script type="application/ld+json">
   {
@@ -70,16 +70,17 @@
     }
   }
   </script>
-  
+
   <!-- Apple Mobile Web App -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="العيادة">
-  
+
   <!-- Security Headers -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://www.gstatic.com https://ilmiyya-clinic-default-rtdb.asia-southeast1.firebasedatabase.app wss://ilmiyya-clinic-default-rtdb.asia-southeast1.firebasedatabase.app; base-uri 'self'; form-action 'self';">
-  
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://www.gstatic.com https://ilmiyya-clinic-default-rtdb.asia-southeast1.firebasedatabase.app wss://ilmiyya-clinic-default-rtdb.asia-southeast1.firebasedatabase.app; base-uri 'self'; form-action 'self';">
+
   <!-- Manifest and Icons -->
   <link rel="manifest" href="manifest.json">
   <link rel="canonical" href="https://ilmiyya-clinic.app/">
@@ -87,29 +88,29 @@
   <link rel="apple-touch-icon" sizes="152x152" href="my-new-icon-192.png">
   <link rel="apple-touch-icon" sizes="180x180" href="my-new-icon-512.png">
   <link rel="icon" type="image/png" href="my-new-icon-192.png">
-  
+
   <!-- Fonts and Styles -->
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap"
     rel="stylesheet" media="print" onload="this.media='all'">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
+
   <title>العيادة العلمية - نظام إدارة المرضى</title>
-  
+
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-2H6184TE3L"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
+    function gtag() { dataLayer.push(arguments); }
     gtag('js', new Date());
     gtag('config', 'G-2H6184TE3L', {
       'allow_google_signals': false,
       'allow_ad_personalization_signals': false
     });
   </script>
-  
+
   <!-- CryptoJS for encryption -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js" defer></script>
-  
+
   <style>
     * {
       margin: 0;
@@ -180,7 +181,6 @@
       --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.5);
       --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
       --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.5);
-    }
       --white: #0f172a;
       --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3);
       --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.3);
@@ -404,9 +404,19 @@
     }
 
     @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-5px); }
-      75% { transform: translateX(5px); }
+
+      0%,
+      100% {
+        transform: translateX(0);
+      }
+
+      25% {
+        transform: translateX(-5px);
+      }
+
+      75% {
+        transform: translateX(5px);
+      }
     }
 
     .login-note {
@@ -2445,14 +2455,40 @@
       cursor: pointer;
       transition: color 0.3s;
     }
+
     #toggleLoginMethod:hover {
       color: var(--primary-dark);
       text-decoration: underline;
     }
+
     .splash-subtitle {
       color: rgba(255, 255, 255, 0.8);
       font-size: 14px;
       margin-top: 8px;
+    }
+
+    /* Google Button Style */
+    .btn-google {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 12px 24px;
+      background: #fff;
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius-md);
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--gray-700);
+      font-family: 'Tajawal', sans-serif;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: var(--shadow);
+    }
+
+    .btn-google:hover {
+      background: var(--gray-50);
+      box-shadow: var(--shadow-md);
     }
   </style>
 </head>
@@ -2462,7 +2498,8 @@
   <!-- Splash Screen -->
   <div id="splashScreen">
     <div class="splash-logo">
-      <img src="logo.png" alt="logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" loading="eager">
+      <img src="logo.png" alt="logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+        loading="eager">
       <div class="splash-icon" style="display:none;"><i class="fas fa-clinic-medical"></i></div>
     </div>
     <div class="splash-title">العيادة العلمية</div>
@@ -2472,7 +2509,9 @@
   <!-- Mobile Header -->
   <div class="mobile-header">
     <div class="logo-small">
-      <div class="logo-icon-small" id="mobileLogo"><img src="logo.png" alt="logo" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\'fas fa-clinic-medical\' style=\'font-size: 20px; color: var(--primary);\'></i>';" loading="lazy"></div>
+      <div class="logo-icon-small" id="mobileLogo"><img src="logo.png" alt="logo"
+          onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\'fas fa-clinic-medical\' style=\'font-size: 20px; color: var(--primary);\'></i>';"
+          loading="lazy"></div>
       <h1>العيادة العلمية</h1>
     </div>
     <button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
@@ -2482,15 +2521,18 @@
   <!-- Login -->
   <div id="loginScreen">
     <div class="login-card">
-      <div class="login-logo" id="loginLogo"><img src="logo.png" alt="logo" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\'fas fa-clinic-medical\' style=\'font-size: 60px; color: var(--primary);\'></i>';" loading="eager"></div>
+      <div class="login-logo" id="loginLogo"><img src="logo.png" alt="logo"
+          onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\'fas fa-clinic-medical\' style=\'font-size: 60px; color: var(--primary);\'></i>';"
+          loading="eager"></div>
       <h1>العيادة العلمية</h1>
-      <p style="font-size:13px;line-height:1.8;">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ<br>اللَّهُمَّ صَلِّ عَلَىٰ
+      <p style="font-size:12px;line-height:1.6; color: var(--gray-500); margin-bottom: 24px;">بِسْمِ اللَّهِ
+        الرَّحْمَٰنِ الرَّحِيمِ<br>اللَّهُمَّ صَلِّ عَلَىٰ
         مُحَمَّدٍ وَآلِ مُحَمَّدٍ</p>
       <div class="login-error" id="loginError"></div>
-      
+
       <!-- Clinic ID Login Form -->
       <div id="clinicIdLogin">
-        <input type="text" class="login-input" id="loginClinicId" placeholder="معرف العيادة">
+        <input type="text" class="login-input" id="loginClinicId" placeholder="معرف العيادة" autocomplete="username">
         <input type="password" class="login-input" id="loginPassword" placeholder="كلمة المرور">
         <div style="display: flex; align-items: center; margin-bottom: 15px;">
           <input type="checkbox" id="rememberMe" checked style="width: auto; margin-left: 8px;">
@@ -2503,14 +2545,18 @@
       <!-- Email/Password Login Form -->
       <div id="emailLogin" style="display: none;">
         <input type="email" class="login-input" id="loginEmail" placeholder="البريد الإلكتروني" autocomplete="email">
-        <input type="password" class="login-input" id="loginEmailPassword" placeholder="كلمة المرور" autocomplete="current-password">
+        <input type="password" class="login-input" id="loginEmailPassword" placeholder="كلمة المرور"
+          autocomplete="current-password">
         <div style="display: flex; gap: 10px;">
-            <button type="button" class="btn-login" id="btnEmailRegister" style="flex: 1; background: var(--secondary);">تسجيل جديد</button>
-            <button type="button" class="btn-login" id="btnEmailLogin" style="flex: 1;">دخول</button>
+          <button type="button" class="btn-login" id="btnEmailRegister"
+            style="flex: 1; background: var(--secondary);">تسجيل جديد</button>
+          <button type="button" class="btn-login" id="btnEmailLogin" style="flex: 1;">دخول</button>
         </div>
       </div>
 
-      <a href="#" id="toggleLoginMethod" style="display: block; text-align: center; margin-top: 15px; color: var(--primary); text-decoration: none; font-weight: 600;">أو الدخول بالبريد الإلكتروني</a>
+      <a href="#" id="toggleLoginMethod"
+        style="display: block; text-align: center; margin-top: 15px; color: var(--primary); text-decoration: none; font-weight: 600;">الدخول
+        بالبريد الإلكتروني</a>
 
       <div style="display: flex; align-items: center; text-align: center; margin: 20px 0; color: var(--gray-400);">
         <hr style="flex-grow: 1; border: none; border-top: 1px solid var(--gray-200);">
@@ -2518,7 +2564,21 @@
         <hr style="flex-grow: 1; border: none; border-top: 1px solid var(--gray-200);">
       </div>
       <button type="button" class="btn-google" onclick="handleGoogleLogin()">
-        <svg viewBox="0 0 48 48" width="24px" height="24px" style="margin-left: 12px;"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path><path fill="none" d="M0 0h48v48H0z"></path></svg>
+        <svg viewBox="0 0 48 48" width="24px" height="24px" style="margin-right: 12px;">
+          <path fill="#EA4335"
+            d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z">
+          </path>
+          <path fill="#4285F4"
+            d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z">
+          </path>
+          <path fill="#FBBC05"
+            d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z">
+          </path>
+          <path fill="#34A853"
+            d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z">
+          </path>
+          <path fill="none" d="M0 0h48v48H0z"></path>
+        </svg>
         تسجيل الدخول باستخدام جوجل
       </button>
     </div>
@@ -2529,7 +2589,9 @@
     <div class="sidebar" id="sidebar">
       <div class="sidebar-logo">
         <div class="logo-badge">
-          <div class="logo-icon" id="sidebarLogo"><img src="logo.png" alt="logo" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\'fas fa-clinic-medical\' style=\'font-size: 32px; color: var(--primary);\'></i>';" loading="lazy"></div>
+          <div class="logo-icon" id="sidebarLogo"><img src="logo.png" alt="logo"
+              onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\'fas fa-clinic-medical\' style=\'font-size: 32px; color: var(--primary);\'></i>';"
+              loading="lazy"></div>
           <div class="logo-text">
             <h1>العيادة العلمية</h1>
             <p>نظام إدارة المرضى</p>
@@ -2571,15 +2633,16 @@
         <div class="topbar-title" id="topbarTitle">لوحة التحكم</div>
         <div class="topbar-right">
           <!-- مؤشر حالة الاتصال -->
-          <span id="connectionStatus" style="font-size: 12px; color: #64748b; margin-right: 16px; padding: 8px 12px; background: var(--gray-50); border-radius: 8px; display: flex; align-items: center; gap: 6px;">
+          <span id="connectionStatus"
+            style="font-size: 12px; color: #64748b; margin-right: 16px; padding: 8px 12px; background: var(--gray-50); border-radius: 8px; display: flex; align-items: center; gap: 6px;">
             <i class="fas fa-wifi" style="color: #10b981;"></i> متصل
           </span>
-          
+
           <!-- زر تسجيل الخروج -->
           <button class="btn-add" onclick="handleLogout()" style="background: #ef4444; padding: 8px 16px;">
             <i class="fas fa-sign-out-alt"></i> خروج
           </button>
-          
+
           <div class="date-badge" id="dateDisplay"></div>
           <button class="btn-add" id="btnAddVisit" onclick="openAddVisitForPatient(currentProfileId)"
             style="display:none; padding: 8px 16px;">
@@ -2935,14 +2998,14 @@
   <script>
     // Firebase Config
     const firebaseConfig = {
-        apiKey: "AIzaSyBnoYXVsdFR8GN2oS4bLlfgW8MBE5O1qxk",
-        authDomain: "ilmiyya-clinic.firebaseapp.com",
-        databaseURL: "https://ilmiyya-clinic-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "ilmiyya-clinic",
-        storageBucket: "ilmiyya-clinic.firebasestorage.app",
-        messagingSenderId: "796968939529",
-        appId: "1:796968939529:web:54c255f8d1157a91d288d8",
-        measurementId: "G-2H6184TE3L"
+      apiKey: "AIzaSyBnoYXVsdFR8GN2oS4bLlfgW8MBE5O1qxk",
+      authDomain: "ilmiyya-clinic.firebaseapp.com",
+      databaseURL: "https://ilmiyya-clinic-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "ilmiyya-clinic",
+      storageBucket: "ilmiyya-clinic.firebasestorage.app",
+      messagingSenderId: "796968939529",
+      appId: "1:796968939529:web:54c255f8d1157a91d288d8",
+      measurementId: "G-2H6184TE3L"
     };
 
     // Initialize app
@@ -2952,7 +3015,7 @@
       window.db = firebase.database();
 
       initLogo();
-      initApp();
+      initAuth(); // استدعاء دالة المصادقة الشاملة
     });
 
     // Hide splash screen when everything is loaded
@@ -2980,14 +3043,14 @@
       if (isEmailVisible) {
         clinicIdLogin.style.display = 'block';
         emailLogin.style.display = 'none';
-        toggleLink.textContent = 'أو الدخول بالبريد الإلكتروني';
+        toggleLink.textContent = 'الدخول بالبريد الإلكتروني';
       } else {
         clinicIdLogin.style.display = 'none';
         emailLogin.style.display = 'block';
-        toggleLink.textContent = 'أو الدخول بمعرف العيادة';
+        toggleLink.textContent = 'الدخول بمعرف العيادة';
       }
     });
   </script>
-</head>
+  </head>
 
 </html>
