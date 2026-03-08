@@ -164,6 +164,7 @@ function loadPatients() {
   document.getElementById('patientsEmpty').style.display = 'none';
 
   patients.forEach(patient => {
+    const diseases = Array.isArray(patient.diseases) ? patient.diseases : [];
     const row = document.createElement('tr');
     row.innerHTML = `
       <td>
@@ -177,7 +178,7 @@ function loadPatients() {
       </td>
       <td>${patient.phone || '—'}</td>
       <td>${patient.age || '—'}</td>
-      <td>${patient.diseases.join(', ') || '—'}</td>
+      <td>${diseases.join(', ') || '—'}</td>
       <td><span class="visit-count">${objToArray(dbData.visits).filter(v => v.patientId === patient.id).length}</span></td>
       <td>${fmtDate(objToArray(dbData.visits).filter(v => v.patientId === patient.id).sort((a, b) => new Date(b.date) - new Date(a.date))[0]?.date)}</td>
       <td>
@@ -207,7 +208,7 @@ function showPatientProfile(patientId) {
         <h2>${patient.name}</h2>
         <p>${patient.phone || 'لا يوجد رقم هاتف'}</p>
         <div class="profile-tags">
-          ${patient.diseases.map(d => `<span class="ptag">${d}</span>`).join('')}
+          ${(Array.isArray(patient.diseases) ? patient.diseases : []).map(d => `<span class="ptag">${d}</span>`).join('')}
         </div>
       </div>
     </div>
@@ -218,7 +219,7 @@ function showPatientProfile(patientId) {
         <div class="info-row"><div class="ir-label">الهاتف</div><div class="ir-value">${patient.phone || '—'}</div></div>
         <div class="info-row"><div class="ir-label">العنوان</div><div class="ir-value">${patient.address || '—'}</div></div>
         <div class="info-row"><div class="ir-label">العمر</div><div class="ir-value">${patient.age || '—'}</div></div>
-        <div class="info-row"><div class="ir-label">الأمراض المزمنة</div><div class="ir-value">${patient.diseases.join(', ') || 'لا توجد'}</div></div>
+        <div class="info-row"><div class="ir-label">الأمراض المزمنة</div><div class="ir-value">${(Array.isArray(patient.diseases) ? patient.diseases : []).join(', ') || 'لا توجد'}</div></div>
         <div class="info-row"><div class="ir-label">الأدوية</div><div class="ir-value">${patient.meds || 'لا توجد'}</div></div>
         <div class="info-row"><div class="ir-label">التاريخ الشخصي</div><div class="ir-value">${patient.history || 'لا يوجد'}</div></div>
         <div class="info-row"><div class="ir-label">ملاحظات</div><div class="ir-value">${patient.notes || 'لا توجد'}</div></div>
@@ -259,7 +260,7 @@ function editPatient(patientId) {
   document.getElementById('inp_notes').value = patient.notes || '';
 
   document.querySelectorAll('#chronicCbs .cb-item').forEach(el => {
-    el.classList.toggle('sel', patient.diseases.includes(el.getAttribute('data-value')));
+    el.classList.toggle('sel', (Array.isArray(patient.diseases) ? patient.diseases : []).includes(el.getAttribute('data-value')));
     el.querySelector('i').style.display = el.classList.contains('sel') ? 'block' : 'none';
   });
 
@@ -286,7 +287,7 @@ function deletePatient(patientId) {
 function exportPatients() {
   const patients = objToArray(dbData.patients);
   const csv = 'Name,Phone,Age,Diseases,Medications,History,Notes\n' +
-    patients.map(p => `"${p.name}","${p.phone}","${p.age}","${p.diseases.join('; ')}","${p.meds}","${p.history}","${p.notes}"`).join('\n');
+    patients.map(p => `"${p.name}","${p.phone}","${p.age}","${(Array.isArray(p.diseases) ? p.diseases : []).join('; ')}","${p.meds}","${p.history}","${p.notes}"`).join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
