@@ -188,7 +188,7 @@ function handleLogin() {
 
 function resetBtn(btn) {
   btn.disabled = false;
-  btn.innerHTML = btn.id === 'btnLogin' ? 'دخول سريع' : 'دخول';
+  btn.innerHTML = 'دخول';
 }
 
 function handleOfflineLogin(id, pass, errorEl, btn) {
