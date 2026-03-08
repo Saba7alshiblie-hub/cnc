@@ -12,28 +12,14 @@ function toggleSidebar() {
   document.querySelector('.sidebar-overlay').classList.toggle('open');
 }
 
-function showPage(pageId) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('page' + pageId.charAt(0).toUpperCase() + pageId.slice(1)).classList.add('active');
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('nav-' + pageId).classList.add('active');
-  document.getElementById('topbarTitle').textContent = getPageTitle(pageId);
-  updateBottomNav(pageId);
-}
+function switchLoginMethod(method) {
+  const isClinic = method === 'clinic';
+  document.getElementById('clinicIdLogin').style.display = isClinic ? 'block' : 'none';
+  document.getElementById('emailLogin').style.display = isClinic ? 'none' : 'block';
 
-function getPageTitle(pageId) {
-  const titles = {
-    dash: 'لوحة التحكم',
-    patients: 'المرضى',
-    today: 'زيارات اليوم',
-    profile: 'الملف الشخصي'
-  };
-  return titles[pageId] || 'العيادة العلمية';
-}
-
-function updateBottomNav(pageId) {
-  document.querySelectorAll('.bottom-nav-item').forEach(n => n.classList.remove('active'));
-  document.querySelector(`.bottom-nav-item[onclick*="showPage('${pageId}')"]`).classList.add('active');
+  const tabs = document.querySelectorAll('.login-tab');
+  tabs[0].classList.toggle('active', isClinic);
+  tabs[1].classList.toggle('active', !isClinic);
 }
 
 function showApp() {
@@ -47,7 +33,8 @@ function showApp() {
 }
 
 function updateUI() {
-  document.getElementById('patientsBadge').textContent = Object.keys(dbData.patients).length;
+  const patientCount = dbData.patients ? Object.keys(dbData.patients).length : 0;
+  document.getElementById('patientsBadge').textContent = patientCount;
   document.getElementById('userName').textContent = clinicId || 'العيادة';
 }
 
@@ -61,7 +48,7 @@ function loadDashboard() {
   document.getElementById('statVisits').textContent = visits.length;
 
   const reminders = patients.filter(p => {
-    const lastVisit = visits.filter(v => v.patientId === p.id).sort((a,b) => new Date(b.date) - new Date(a.date))[0];
+    const lastVisit = visits.filter(v => v.patientId === p.id).sort((a, b) => new Date(b.date) - new Date(a.date))[0];
     if (!lastVisit) return false;
     const daysSince = (new Date() - new Date(lastVisit.date)) / (1000 * 60 * 60 * 24);
     return daysSince > 30; // Remind after 30 days
@@ -72,7 +59,7 @@ function loadDashboard() {
 }
 
 function loadRecentVisits() {
-  const visits = objToArray(dbData.visits).sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+  const visits = objToArray(dbData.visits).sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
   const container = document.getElementById('recentVisitsList');
   container.innerHTML = '';
 
@@ -100,6 +87,26 @@ function loadRecentVisits() {
 
 function closeModal(modalId) {
   document.getElementById(modalId).classList.remove('open');
+}
+
+/**
+ * يعرض نافذة تأكيد منبثقة مخصصة.
+ * @param {string} message - الرسالة التي ستُعرض للمستخدم.
+ * @param {function} onConfirm - الدالة التي سيتم استدعاؤها عند التأكيد.
+ * @param {string} [title='تأكيد الإجراء'] - عنوان النافذة.
+ */
+function showConfirm(message, onConfirm, title = 'تأكيد الإجراء') {
+  const modal = document.getElementById('modalConfirm');
+  document.getElementById('modalConfirmTitle').textContent = title;
+  document.getElementById('confirmMsg').textContent = message;
+  const confirmBtn = document.getElementById('confirmBtn');
+
+  // استنساخ واستبدال الزر لإزالة أي مستمعي أحداث قدامى
+  const newConfirmBtn = confirmBtn.cloneNode(true);
+  confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+
+  newConfirmBtn.onclick = () => { closeModal('modalConfirm'); onConfirm(); };
+  modal.classList.add('open');
 }
 
 function openNewPatientModal() {
@@ -171,7 +178,7 @@ function loadPatients() {
       <td>${patient.age || '—'}</td>
       <td>${patient.diseases.join(', ') || '—'}</td>
       <td><span class="visit-count">${objToArray(dbData.visits).filter(v => v.patientId === patient.id).length}</span></td>
-      <td>${fmtDate(objToArray(dbData.visits).filter(v => v.patientId === patient.id).sort((a,b) => new Date(b.date) - new Date(a.date))[0]?.date)}</td>
+      <td>${fmtDate(objToArray(dbData.visits).filter(v => v.patientId === patient.id).sort((a, b) => new Date(b.date) - new Date(a.date))[0]?.date)}</td>
       <td>
         <div class="btn-row-actions">
           <button class="btn-sm primary" onclick="showPatientProfile('${patient.id}')" aria-label="عرض الملف"><i class="fas fa-eye"></i></button>
@@ -190,7 +197,7 @@ function showPatientProfile(patientId) {
   const patient = dbData.patients[patientId];
   if (!patient) return;
 
-  const visits = objToArray(dbData.visits).filter(v => v.patientId === patientId).sort((a,b) => new Date(b.date) - new Date(a.date));
+  const visits = objToArray(dbData.visits).filter(v => v.patientId === patientId).sort((a, b) => new Date(b.date) - new Date(a.date));
 
   const content = `
     <div class="profile-header">
@@ -257,13 +264,15 @@ function editPatient(patientId) {
 }
 
 function deletePatient(patientId) {
-  if (!confirm('هل أنت متأكد من حذف هذا المريض؟')) return;
-  delete dbData.patients[patientId];
-  objToArray(dbData.visits).filter(v => v.patientId === patientId).forEach(v => delete dbData.visits[v.id]);
   saveToFirebase();
   loadPatients();
   loadDashboard();
-  showToast('تم حذف المريض');
+  showToast('تم حذف المريض بنجاح', 'success');
+  // إذا كان ملف المريض المحذوف معروضًا، ارجع إلى صفحة المرضى
+  if (document.getElementById('pageProfile').classList.contains('active') && currentProfileId === patientId) {
+    showPage('patients');
+  }
+}, 'تأكيد الحذف');
 }
 
 function exportPatients() {

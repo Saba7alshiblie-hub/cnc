@@ -160,10 +160,8 @@ function handleLogin() {
   db.ref('clinics/' + id).once('value').then(snap => {
     const data = snap.val();
     if (data === null) {
-      // إصلاح أمني: منع إنشاء عيادة جديدة تلقائيًا
       showError(errorEl, '❌ معرف العيادة غير موجود.');
-      btn.disabled = false;
-      btn.innerHTML = 'دخول';
+      resetBtn(btn);
     } else if (data.password === pass) {
       console.log('✅ تم التحقق من كلمة المرور بنجاح');
       clinicId = id;
@@ -177,37 +175,41 @@ function handleLogin() {
       authSession.saveData(dbData);
       loadOfflineData();
       showApp();
-      document.getElementById('loginScreen').style.display = 'none';
     } else {
       showError(errorEl, '❌ كلمة المرور غير صحيحة.');
-      btn.disabled = false;
-      btn.innerHTML = 'دخول';
+      resetBtn(btn);
     }
   }).catch(err => {
     console.error('خطأ Firebase:', err);
-    showError(errorEl, '❌ خطأ في الاتصال بالخادم. يرجى المحاولة مرة أخرى.');
-    btn.disabled = false;
-    btn.innerHTML = 'دخول';
+    showError(errorEl, '❌ خطأ في الاتصال بالخادم.');
+    resetBtn(btn);
   });
+}
+
+function resetBtn(btn) {
+  btn.disabled = false;
+  btn.innerHTML = btn.id === 'btnLogin' ? 'دخول سريع' : 'دخول';
 }
 
 function handleOfflineLogin(id, pass, errorEl, btn) {
   const session = authSession.getSession();
-  // إصلاح: التحقق من "الجلسة" بدلاً من "البيانات" لكلمات المرور
-  if (session && session.clinicId === id && session.password === pass) {
-    const userData = authSession.getData();
-    console.log('✅ تسجيل دخول بدون نت');
-    clinicId = id;
-    dbData = userData;
-    authSession.saveSession(id, pass);
-    loadOfflineData();
-    showApp();
-    document.getElementById('loginScreen').style.display = 'none';
-  } else {
-    showError(errorEl, '❌ وضع عدم الاتصال: لا يمكن التحقق من البيانات أو لا توجد جلسة محفوظة.');
-    btn.disabled = false;
-    btn.innerHTML = 'دخول';
+  const userData = authSession.getData();
+
+  // دقة أكثر في التحقق من وضع الاوفلاين
+  if (userData && id && pass) {
+    // إذا كان هناك بيانات محفوظة واسم المستخدم وكلمة المرور يطابقان الجلسة المحفوظة
+    if (session && session.clinicId === id && session.password === pass) {
+      console.log('✅ تسجيل دخول بدون نت (جلسة متطابقة)');
+      clinicId = id;
+      dbData = userData;
+      loadOfflineData();
+      showApp();
+      return;
+    }
   }
+
+  showError(errorEl, '❌ لا يمكن الدخول: تأكد من الاتصال بالإنترنت أو صحة البيانات المحفوظة.');
+  resetBtn(btn);
 }
 
 function signOut() {
@@ -325,10 +327,4 @@ function initializeClinicForNewUser(userId) {
       console.error('خطأ في إنشاء العيادة:', err);
       showError(document.getElementById('loginError'), '❌ خطأ في إعداد العيادة الجديدة.');
     });
-}
-
-function handleLogout() {
-  if (confirm('هل أنت متأكد من أنك تريد تسجيل الخروج؟')) {
-    signOut();
-  }
 }
