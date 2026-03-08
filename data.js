@@ -6,6 +6,37 @@ let currentProfileId = null;
 let visitPatientLock = null;
 let deleteCallback = null;
 
+function normalizeClinicData(rawData) {
+  const input = rawData || {};
+  const patientsIn = input.patients || {};
+  const visitsIn = input.visits || {};
+  const patients = {};
+  const visits = {};
+
+  Object.keys(patientsIn).forEach(id => {
+    const p = patientsIn[id] || {};
+    patients[id] = {
+      ...p,
+      name: typeof p.name === 'string' ? p.name : '',
+      phone: typeof p.phone === 'string' ? p.phone : '',
+      diseases: Array.isArray(p.diseases) ? p.diseases : []
+    };
+  });
+
+  Object.keys(visitsIn).forEach(id => {
+    const v = visitsIn[id] || {};
+    visits[id] = {
+      ...v,
+      patientId: typeof v.patientId === 'string' ? v.patientId : '',
+      service: typeof v.service === 'string' ? v.service : '',
+      date: typeof v.date === 'string' ? v.date : '',
+      notes: typeof v.notes === 'string' ? v.notes : ''
+    };
+  });
+
+  return { patients, visits };
+}
+
 function loadOfflineData() {
   updateUI();
   loadPatients();
@@ -20,10 +51,7 @@ function syncWithOnlineDatabase(id, pass, skipShow = false) {
     const passwordOk = pass === null ? true : (data && data.password === pass);
     if (data && passwordOk) {
       clinicId = id;
-      dbData = {
-        patients: data.patients || {},
-        visits: data.visits || {}
-      };
+      dbData = normalizeClinicData(data);
       authSession.saveData(dbData);
       loadOfflineData();
       if (!appShown) {

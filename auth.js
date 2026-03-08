@@ -100,7 +100,7 @@ function initAuth() {
         const userData = authSession.getData();
         clinicId = session.clinicId;
         if (userData) {
-          dbData = userData;
+          dbData = normalizeClinicData(userData);
           loadOfflineData();
           console.log('📦 تم تحميل البيانات المحلية');
         }
@@ -167,10 +167,7 @@ function handleLogin() {
     } else if (data.password === pass) {
       console.log('✅ تم التحقق من كلمة المرور بنجاح');
       clinicId = id;
-      dbData = {
-        patients: data.patients || {},
-        visits: data.visits || {}
-      };
+      dbData = normalizeClinicData(data);
       if (rememberMe) {
         authSession.saveSession(id, pass);
       }
