@@ -2441,6 +2441,14 @@
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
 
+    #toggleLoginMethod {
+      cursor: pointer;
+      transition: color 0.3s;
+    }
+    #toggleLoginMethod:hover {
+      color: var(--primary-dark);
+      text-decoration: underline;
+    }
     .splash-subtitle {
       color: rgba(255, 255, 255, 0.8);
       font-size: 14px;
@@ -2926,8 +2934,7 @@
 
   <script>
     // Firebase Config
-    window.addEventListener('load', () => {
-      const firebaseConfig = {
+    const firebaseConfig = {
         apiKey: "AIzaSyBnoYXVsdFR8GN2oS4bLlfgW8MBE5O1qxk",
         authDomain: "ilmiyya-clinic.firebaseapp.com",
         databaseURL: "https://ilmiyya-clinic-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -2936,22 +2943,24 @@
         messagingSenderId: "796968939529",
         appId: "1:796968939529:web:54c255f8d1157a91d288d8",
         measurementId: "G-2H6184TE3L"
-      };
+    };
+
+    // Initialize app
+    document.addEventListener('DOMContentLoaded', () => {
       firebase.initializeApp(firebaseConfig);
       firebase.analytics(); // تفعيل التحليلات
       window.db = firebase.database();
 
-      // Hide splash screen
+      initLogo();
+      initApp();
+    });
+
+    // Hide splash screen when everything is loaded
+    window.addEventListener('load', () => {
       setTimeout(() => {
         const splash = document.getElementById('splashScreen');
         if (splash) splash.style.display = 'none';
       }, 1500);
-    });
-
-    // Initialize app
-    document.addEventListener('DOMContentLoaded', () => {
-      initLogo();
-      initApp();
     });
 
     // Login button
