@@ -7,11 +7,14 @@ function fmtDate(d) { if (!d) return '—'; return new Date(d + 'T00:00:00').toL
 function today() { return new Date().toISOString().split('T')[0]; }
 function showToast(msg, type = 'success') {
   const t = document.getElementById('toast');
+  if (!t) return;
   const icon = t.querySelector('i');
-  if (type === 'success') {
+  if (icon && type === 'success') {
     icon.className = 'fas fa-check-circle';
-  } else if (type === 'error') {
+  } else if (icon && type === 'error') {
     icon.className = 'fas fa-exclamation-circle';
+  } else if (icon) {
+    icon.className = 'fas fa-info-circle';
   }
   t.querySelector('span').textContent = msg;
   t.className = 'toast show ' + type;
@@ -58,6 +61,7 @@ function toggleDarkMode() {
 
 function updateDarkModeIcon() {
   const toggle = document.getElementById('darkModeToggle');
+  if (!toggle) return;
   if (document.body.classList.contains('dark-mode')) {
     toggle.innerHTML = '<i class="fas fa-sun"></i>';
     toggle.setAttribute('aria-label', 'Switch to light mode');

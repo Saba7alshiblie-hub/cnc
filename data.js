@@ -43,6 +43,14 @@ function loadOfflineData() {
   loadTodayVisits();
 }
 
+function updateConnectionBadge(isOnline) {
+  const status = document.getElementById('connectionStatus');
+  if (!status) return;
+  status.innerHTML = isOnline
+    ? '<i class="fas fa-wifi" style="color:#10b981;"></i> متصل'
+    : '<i class="fas fa-wifi-slash" style="color:#ef4444;"></i> غير متصل';
+}
+
 function syncWithOnlineDatabase(id, pass, skipShow = false) {
   let appShown = skipShow;
   db.ref('clinics/' + id).on('value', snap => {
@@ -60,11 +68,13 @@ function syncWithOnlineDatabase(id, pass, skipShow = false) {
       }
       document.getElementById('syncDot').className = 'sync-dot ok';
       document.getElementById('syncStatusText').textContent = 'متصل';
+      updateConnectionBadge(true);
     }
   }, err => {
     console.error('خطأ في المزامنة:', err);
     document.getElementById('syncDot').className = 'sync-dot err';
     document.getElementById('syncStatusText').textContent = 'خطأ';
+    updateConnectionBadge(false);
   });
 }
 

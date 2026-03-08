@@ -5,29 +5,59 @@ function openAddVisitForPatient(patientId) {
 }
 
 function openAddVisitModal() {
-  document.getElementById('inp_visitPatient').value = currentProfileId || '';
-  document.querySelectorAll('#modalAddVisit input, #modalAddVisit select, #modalAddVisit textarea').forEach(el => el.value = '');
-  document.querySelectorAll('.err-msg').forEach(el => el.style.display = 'none');
+  const patientSelect = document.getElementById('inp_visitPatient');
+  if (patientSelect) {
+    patientSelect.value = currentProfileId || '';
+  }
+
+  document.getElementById('inp_visitService').value = '';
+  document.getElementById('inp_visitDate').value = today();
+  document.getElementById('inp_visitDetails').value = '';
+  document.getElementById('inp_hijamaType').value = 'النوع الأول';
+  document.getElementById('inp_bpSystolic').value = '';
+  document.getElementById('inp_bpDiastolic').value = '';
+  document.getElementById('inp_bpPulse').value = '';
+  document.getElementById('inp_bpStatus').value = 'normal';
+  document.getElementById('inp_bsLevel').value = '';
+  document.getElementById('inp_bsMeasureTime').value = '';
+  document.getElementById('inp_bsContext').value = 'صائم';
+  document.getElementById('inp_bsTimeAfterMeal').value = '';
+  document.querySelectorAll('#modalAddVisit .err-msg').forEach(el => {
+    el.style.display = 'none';
+    el.classList.remove('show');
+  });
   toggleServiceFields();
   document.getElementById('modalAddVisit').classList.add('open');
 }
 
 function toggleServiceFields() {
   const service = document.getElementById('inp_visitService').value;
-  document.getElementById('hijamaTypeWrap').style.display = service.includes('حجامة') ? 'block' : 'none';
-  document.getElementById('bpFields').style.display = service.includes('ضغط') ? 'block' : 'none';
-  document.getElementById('bsFields').style.display = service.includes('سكر') ? 'block' : 'none';
+  document.getElementById('hijamaTypeWrap').style.display = service === 'حجامة' ? 'block' : 'none';
+  document.getElementById('bpFields').style.display = service === 'قياس ضغط الدم' ? 'block' : 'none';
+  document.getElementById('bsFields').style.display = service === 'مراقبة سكر الدم' ? 'block' : 'none';
 }
 
 function autoCalcBP() {
   const sys = parseInt(document.getElementById('inp_bpSystolic').value) || 0;
   const dia = parseInt(document.getElementById('inp_bpDiastolic').value) || 0;
-  let status = 'normal';
-  if (sys < 90 || dia < 60) status = 'low';
-  else if (sys >= 180 || dia >= 120) status = 'crisis';
-  else if (sys >= 140 || dia >= 90) status = 'high';
-  else if (sys >= 130 || dia >= 80) status = 'high_normal';
+  if (!sys || !dia) return;
+
+  let status = 'optimal';
+  if (sys >= 180 || dia >= 110) status = 'grade3';
+  else if (sys >= 160 || dia >= 100) status = 'grade2';
+  else if (sys >= 140 || dia >= 90) status = 'grade1';
+  else if (sys >= 130 || dia >= 85) status = 'high_normal';
+  else if (sys >= 120 || dia >= 80) status = 'normal';
+
+  if (sys >= 140 && dia < 90) status = 'isolated';
   document.getElementById('inp_bpStatus').value = status;
+}
+
+function setVisitFieldError(id, show) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.display = show ? 'block' : 'none';
+  el.classList.toggle('show', show);
 }
 
 function saveVisit() {
@@ -37,31 +67,47 @@ function saveVisit() {
   const details = document.getElementById('inp_visitDetails').value.trim();
 
   if (!patientId || !service || !date) {
-    if (!patientId) document.getElementById('err_visitPatient').style.display = 'block';
-    if (!service) document.getElementById('err_visitService').style.display = 'block';
-    if (!date) document.getElementById('err_visitDate').style.display = 'block';
+    setVisitFieldError('err_visitPatient', !patientId);
+    setVisitFieldError('err_visitService', !service);
+    setVisitFieldError('err_visitDate', !date);
     return;
   }
+  setVisitFieldError('err_visitPatient', false);
+  setVisitFieldError('err_visitService', false);
+  setVisitFieldError('err_visitDate', false);
 
   let visitData = { patientId, service, date, notes: details };
 
-  if (service.includes('حجامة')) {
-    visitData.hijamaType = document.getElementById('inp_hijamaType').value;
+  if (service === 'حجامة') {
+    const hijamaType = document.getElementById('inp_hijamaType').value;
+    visitData.hijamaType = hijamaType;
+    visitData.service = 'حجامة - ' + hijamaType;
   }
 
-  if (service.includes('ضغط')) {
+  if (service === 'قياس ضغط الدم') {
+    const sys = parseInt(document.getElementById('inp_bpSystolic').value);
+    const dia = parseInt(document.getElementById('inp_bpDiastolic').value);
+    if (!sys || !dia) {
+      showToast('يرجى إدخال قيم ضغط الدم', 'error');
+      return;
+    }
     visitData.bp = {
-      systolic: parseInt(document.getElementById('inp_bpSystolic').value),
-      diastolic: parseInt(document.getElementById('inp_bpDiastolic').value),
-      pulse: parseInt(document.getElementById('inp_bpPulse').value),
+      systolic: sys,
+      diastolic: dia,
+      pulse: parseInt(document.getElementById('inp_bpPulse').value) || null,
       status: document.getElementById('inp_bpStatus').value
     };
   }
 
-  if (service.includes('سكر')) {
+  if (service === 'مراقبة سكر الدم') {
+    const bsLevel = parseFloat(document.getElementById('inp_bsLevel').value);
+    if (!bsLevel) {
+      showToast('يرجى إدخال مستوى السكر', 'error');
+      return;
+    }
     visitData.bs = {
-      level: parseFloat(document.getElementById('inp_bsLevel').value),
-      measureTime: document.getElementById('inp_bsMeasureTime').value,
+      level: bsLevel,
+      time: document.getElementById('inp_bsMeasureTime').value,
       context: document.getElementById('inp_bsContext').value,
       timeAfterMeal: document.getElementById('inp_bsTimeAfterMeal').value
     };
@@ -73,6 +119,7 @@ function saveVisit() {
   saveToFirebase();
   closeModal('modalAddVisit');
   loadDashboard();
+  loadTodayVisits();
   if (currentProfileId) showPatientProfile(currentProfileId);
   showToast('تم إضافة الزيارة');
 }

@@ -25,10 +25,11 @@ function switchLoginMethod(method) {
 function showApp() {
   document.getElementById('appShell').style.display = 'flex';
   document.getElementById('loginScreen').style.display = 'none';
+  bindUIInteractions();
   handlePostLoginActions();
   initDarkMode();
   requestNotificationPermission();
-  loadDashboard();
+  showPage('dash');
   updateUI();
 }
 
@@ -114,6 +115,8 @@ function openNewPatientModal() {
   document.getElementById('patientModalTitle').textContent = 'مريض جديد';
   document.querySelectorAll('#modalAddPatient input, #modalAddPatient select, #modalAddPatient textarea').forEach(el => el.value = '');
   document.querySelectorAll('.err-msg').forEach(el => el.style.display = 'none');
+  const ageDisplay = document.getElementById('ageDisplay');
+  if (ageDisplay) ageDisplay.style.display = 'none';
   document.getElementById('modalAddPatient').classList.add('open');
 }
 
@@ -121,7 +124,8 @@ function savePatient() {
   const name = document.getElementById('inp_name').value.trim();
   const phone = document.getElementById('inp_phone').value.trim();
   const address = document.getElementById('inp_address').value.trim();
-  const age = document.getElementById('inp_age').value;
+  const birthYear = parseInt(document.getElementById('inp_age').value, 10);
+  const age = birthYear ? (new Date().getFullYear() - birthYear) : '';
   const diseases = Array.from(document.querySelectorAll('#chronicCbs .cb-item.sel')).map(el => el.getAttribute('data-value'));
   const meds = document.getElementById('inp_meds').value.trim();
   const history = document.getElementById('inp_history').value.trim();
@@ -133,7 +137,8 @@ function savePatient() {
   }
 
   const patient = {
-    name, phone, address, age, diseases, meds, history, notes,
+    name, phone, address, age, birthYear: birthYear || '',
+    diseases, meds, history, notes,
     createdAt: Date.now()
   };
 
@@ -152,7 +157,13 @@ function savePatient() {
 }
 
 function loadPatients() {
-  const patients = objToArray(dbData.patients);
+  const search = (document.getElementById('searchInput')?.value || '').trim().toLowerCase();
+  const patients = objToArray(dbData.patients).filter(patient => {
+    const patientName = (patient.name || '').toLowerCase();
+    const patientPhone = (patient.phone || '').toLowerCase();
+    return !search || patientName.includes(search) || patientPhone.includes(search);
+  });
+  const visitsArray = objToArray(dbData.visits);
   const tbody = document.getElementById('patientsTableBody');
   tbody.innerHTML = '';
 
@@ -165,6 +176,8 @@ function loadPatients() {
 
   patients.forEach(patient => {
     const diseases = Array.isArray(patient.diseases) ? patient.diseases : [];
+    const patientVisits = visitsArray.filter(v => v.patientId === patient.id);
+    const lastVisit = patientVisits.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
     const row = document.createElement('tr');
     row.innerHTML = `
       <td>
@@ -179,8 +192,8 @@ function loadPatients() {
       <td>${patient.phone || '—'}</td>
       <td>${patient.age || '—'}</td>
       <td>${diseases.join(', ') || '—'}</td>
-      <td><span class="visit-count">${objToArray(dbData.visits).filter(v => v.patientId === patient.id).length}</span></td>
-      <td>${fmtDate(objToArray(dbData.visits).filter(v => v.patientId === patient.id).sort((a, b) => new Date(b.date) - new Date(a.date))[0]?.date)}</td>
+      <td><span class="visit-count">${patientVisits.length}</span></td>
+      <td>${fmtDate(lastVisit?.date)}</td>
       <td>
         <div class="btn-row-actions">
           <button class="btn-sm primary" onclick="showPatientProfile('${patient.id}')" aria-label="عرض الملف"><i class="fas fa-eye"></i></button>
@@ -254,7 +267,8 @@ function editPatient(patientId) {
   document.getElementById('inp_name').value = patient.name || '';
   document.getElementById('inp_phone').value = patient.phone || '';
   document.getElementById('inp_address').value = patient.address || '';
-  document.getElementById('inp_age').value = patient.age || '';
+  document.getElementById('inp_age').value = patient.birthYear || '';
+  calculateAge();
   document.getElementById('inp_meds').value = patient.meds || '';
   document.getElementById('inp_history').value = patient.history || '';
   document.getElementById('inp_notes').value = patient.notes || '';
@@ -296,4 +310,119 @@ function exportPatients() {
   a.click();
   URL.revokeObjectURL(url);
   showToast('تم تصدير البيانات');
+}
+
+function updateBottomNav(page) {
+  const pages = ['dash', 'patients', 'today'];
+  const index = pages.indexOf(page);
+  const items = document.querySelectorAll('.bottom-nav-item');
+  items.forEach((item, i) => item.classList.toggle('active', i === index));
+}
+
+function showPage(page) {
+  const pageMap = {
+    dash: 'pageDash',
+    patients: 'pagePatients',
+    profile: 'pageProfile',
+    today: 'pageToday'
+  };
+  const titleMap = {
+    dash: 'لوحة التحكم',
+    patients: 'المرضى',
+    profile: 'ملف المريض',
+    today: 'زيارات اليوم'
+  };
+
+  const pageId = pageMap[page];
+  if (!pageId) return;
+
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const activePage = document.getElementById(pageId);
+  if (activePage) activePage.classList.add('active');
+
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const activeNav = document.getElementById('nav-' + page);
+  if (activeNav) activeNav.classList.add('active');
+
+  const topbarTitle = document.getElementById('topbarTitle');
+  if (topbarTitle) topbarTitle.textContent = titleMap[page] || '';
+
+  const btnAddPatient = document.getElementById('btnAddPatient');
+  const btnAddVisit = document.getElementById('btnAddVisit');
+  if (btnAddPatient) btnAddPatient.style.display = page === 'patients' ? 'inline-flex' : 'none';
+  if (btnAddVisit) btnAddVisit.style.display = page === 'profile' ? 'inline-flex' : 'none';
+
+  updateBottomNav(page);
+
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.querySelector('.sidebar-overlay');
+  if (sidebar) sidebar.classList.remove('open');
+  if (overlay) overlay.classList.remove('open');
+
+  if (page === 'dash') loadDashboard();
+  if (page === 'patients') loadPatients();
+  if (page === 'today') loadTodayVisits();
+}
+
+function calculateAge() {
+  const input = document.getElementById('inp_age');
+  const ageDisplay = document.getElementById('ageDisplay');
+  if (!input || !ageDisplay) return;
+
+  const birthYear = parseInt(input.value, 10);
+  if (!birthYear || birthYear < 1900 || birthYear > new Date().getFullYear()) {
+    ageDisplay.style.display = 'none';
+    return;
+  }
+
+  ageDisplay.textContent = 'العمر: ' + (new Date().getFullYear() - birthYear) + ' سنة';
+  ageDisplay.style.display = 'block';
+}
+
+let uiBound = false;
+function bindUIInteractions() {
+  if (uiBound) return;
+  uiBound = true;
+
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput) {
+    searchInput.addEventListener('input', loadPatients);
+  }
+
+  const loginPassword = document.getElementById('loginPassword');
+  if (loginPassword) {
+    loginPassword.addEventListener('keydown', e => {
+      if (e.key === 'Enter') handleLogin();
+    });
+  }
+
+  document.querySelectorAll('#chronicCbs .cb-item').forEach(el => {
+    el.addEventListener('click', () => {
+      el.classList.toggle('sel');
+      const icon = el.querySelector('i');
+      if (icon) icon.style.display = el.classList.contains('sel') ? 'block' : 'none';
+    });
+  });
+
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay) overlay.classList.remove('open');
+    });
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+    }
+  });
+
+  window.addEventListener('online', () => {
+    updateConnectionBadge?.(true);
+    showToast('عاد الاتصال بالإنترنت', 'success');
+  });
+  window.addEventListener('offline', () => {
+    updateConnectionBadge?.(false);
+    showToast('تم فقدان الاتصال بالإنترنت', 'error');
+  });
+  updateConnectionBadge?.(navigator.onLine);
 }
