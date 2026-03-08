@@ -79,7 +79,7 @@
 
   <!-- Security Headers -->
   <meta http-equiv="Content-Security-Policy"
-    content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://www.gstatic.com https://ilmiyya-clinic-default-rtdb.asia-southeast1.firebasedatabase.app wss://ilmiyya-clinic-default-rtdb.asia-southeast1.firebasedatabase.app; base-uri 'self'; form-action 'self';">
+    content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://www.gstatic.com https://ilmiyya-clinic-default-rtdb.asia-southeast1.firebasedatabase.app wss://ilmiyya-clinic-default-rtdb.asia-southeast1.firebasedatabase.app https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://accounts.google.com https://firebaseinstallations.googleapis.com https://firebase.googleapis.com; frame-src https://ilmiyya-clinic.firebaseapp.com https://accounts.google.com; base-uri 'self'; form-action 'self';">
 
   <!-- Manifest and Icons -->
   <link rel="manifest" href="manifest.json">
@@ -2865,6 +2865,10 @@
             <label>رقم الهاتف</label>
             <input type="tel" id="inp_phone" placeholder="07XXXXXXXXX">
           </div>
+          <div class="fg">
+            <label>العنوان</label>
+            <input type="text" id="inp_address" placeholder="عنوان السكن">
+          </div>
         </div>
         <div class="row2">
           <div class="fg">
@@ -3083,6 +3087,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-analytics-compat.js" defer></script>
 
   <!-- Scripts -->
+  <script src="utils.js" defer></script>
   <script src="data.js" defer></script>
   <script src="auth.js" defer></script>
   <script src="ui.js" defer></script>
@@ -3109,6 +3114,16 @@
 
       initLogo();
       initAuth(); // استدعاء دالة المصادقة الشاملة
+
+      // ربط أزرار تسجيل الدخول بعد تحميل الـ scripts
+      const btnL = document.getElementById('btnLogin');
+      if (btnL) btnL.addEventListener('click', handleLogin);
+
+      const btnEL = document.getElementById('btnEmailLogin');
+      if (btnEL) btnEL.addEventListener('click', handleEmailLogin);
+
+      const btnER = document.getElementById('btnEmailRegister');
+      if (btnER) btnER.addEventListener('click', handleEmailRegister);
     });
 
     // Hide splash screen when everything is loaded
@@ -3118,17 +3133,6 @@
         if (splash) splash.style.display = 'none';
       }, 1500);
     });
-
-    // Login, Email Login, and Register listeners are already handled by IDs in auth.js
-    // Adding listeners here for clarity if they aren't handled globally
-    const btnL = document.getElementById('btnLogin');
-    if (btnL) btnL.addEventListener('click', handleLogin);
-
-    const btnEL = document.getElementById('btnEmailLogin');
-    if (btnEL) btnEL.addEventListener('click', handleEmailLogin);
-
-    const btnER = document.getElementById('btnEmailRegister');
-    if (btnER) btnER.addEventListener('click', handleEmailRegister);
   </script>
 </body>
 

@@ -120,6 +120,7 @@ function openNewPatientModal() {
 function savePatient() {
   const name = document.getElementById('inp_name').value.trim();
   const phone = document.getElementById('inp_phone').value.trim();
+  const address = document.getElementById('inp_address').value.trim();
   const age = document.getElementById('inp_age').value;
   const diseases = Array.from(document.querySelectorAll('#chronicCbs .cb-item.sel')).map(el => el.getAttribute('data-value'));
   const meds = document.getElementById('inp_meds').value.trim();
@@ -132,7 +133,7 @@ function savePatient() {
   }
 
   const patient = {
-    name, phone, age, diseases, meds, history, notes,
+    name, phone, address, age, diseases, meds, history, notes,
     createdAt: Date.now()
   };
 
@@ -215,6 +216,7 @@ function showPatientProfile(patientId) {
         <div class="info-card-title">المعلومات الشخصية</div>
         <div class="info-row"><div class="ir-label">الاسم</div><div class="ir-value">${patient.name}</div></div>
         <div class="info-row"><div class="ir-label">الهاتف</div><div class="ir-value">${patient.phone || '—'}</div></div>
+        <div class="info-row"><div class="ir-label">العنوان</div><div class="ir-value">${patient.address || '—'}</div></div>
         <div class="info-row"><div class="ir-label">العمر</div><div class="ir-value">${patient.age || '—'}</div></div>
         <div class="info-row"><div class="ir-label">الأمراض المزمنة</div><div class="ir-value">${patient.diseases.join(', ') || 'لا توجد'}</div></div>
         <div class="info-row"><div class="ir-label">الأدوية</div><div class="ir-value">${patient.meds || 'لا توجد'}</div></div>
@@ -250,6 +252,7 @@ function editPatient(patientId) {
   document.getElementById('patientModalTitle').textContent = 'تعديل المريض';
   document.getElementById('inp_name').value = patient.name || '';
   document.getElementById('inp_phone').value = patient.phone || '';
+  document.getElementById('inp_address').value = patient.address || '';
   document.getElementById('inp_age').value = patient.age || '';
   document.getElementById('inp_meds').value = patient.meds || '';
   document.getElementById('inp_history').value = patient.history || '';

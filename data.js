@@ -12,16 +12,24 @@ function loadOfflineData() {
   loadTodayVisits();
 }
 
-function syncWithOnlineDatabase(id, pass) {
+function syncWithOnlineDatabase(id, pass, skipShow = false) {
+  let appShown = skipShow;
   db.ref('clinics/' + id).on('value', snap => {
     const data = snap.val();
-    if (data && data.password === pass) {
+    // إذا كان pass = null فهذا مستخدم Firebase Auth (بريد/جوجل) ولا نتحقق من كلمة المرور
+    const passwordOk = pass === null ? true : (data && data.password === pass);
+    if (data && passwordOk) {
+      clinicId = id;
       dbData = {
         patients: data.patients || {},
         visits: data.visits || {}
       };
       authSession.saveData(dbData);
       loadOfflineData();
+      if (!appShown) {
+        appShown = true;
+        showApp();
+      }
       document.getElementById('syncDot').className = 'sync-dot ok';
       document.getElementById('syncStatusText').textContent = 'متصل';
     }

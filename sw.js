@@ -1,5 +1,5 @@
-const STATIC_CACHE = 'ilmiyya-static-v8';
-const DYNAMIC_CACHE = 'ilmiyya-dynamic-v8';
+const STATIC_CACHE = 'ilmiyya-static-v9';
+const DYNAMIC_CACHE = 'ilmiyya-dynamic-v9';
 const OFFLINE_PAGE = './offline.html';
 const NOT_FOUND_PAGE = './404.html';
 
@@ -99,7 +99,7 @@ self.addEventListener('fetch', event => {
         if (response) {
           return response;
         }
-        
+
         return fetch(event.request).then(networkResponse => {
           // Check for successful response (200-299)
           if (!networkResponse || networkResponse.status < 200 || networkResponse.status >= 300) {
@@ -162,11 +162,11 @@ self.addEventListener('push', event => {
 // Handle notification clicks
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  
+
   if (event.action === 'close') {
     return;
   }
-  
+
   event.waitUntil(
     clients.matchAll({ type: 'window' }).then(clientList => {
       // Check if app window already exists

@@ -10,15 +10,6 @@ class AuthSession {
     return CryptoJS.AES.encrypt(text, this.encryptionKey).toString();
   }
 
-  decrypt(ciphertext) {
-    try {
-      const bytes = CryptoJS.AES.decrypt(ciphertext, this.encryptionKey);
-      return bytes.toString(CryptoJS.enc.Utf8);
-    } catch (e) {
-      return null;
-    }
-  }
-
   saveSession(clinicId, password) {
     const session = {
       clinicId: clinicId,
@@ -156,8 +147,14 @@ function handleLogin() {
     return;
   }
 
-  // التحقق من Firebase
+  // التحقق من Firebase (مع timeout 10 ثواني)
+  const loginTimeout = setTimeout(() => {
+    showError(errorEl, '❌ انتهت مهلة الاتصال. تحقق من الإنترنت وأعد المحاولة.');
+    resetBtn(btn);
+  }, 10000);
+
   db.ref('clinics/' + id).once('value').then(snap => {
+    clearTimeout(loginTimeout);
     const data = snap.val();
     if (data === null) {
       showError(errorEl, '❌ معرف العيادة غير موجود.');
@@ -175,13 +172,21 @@ function handleLogin() {
       authSession.saveData(dbData);
       loadOfflineData();
       showApp();
+      // تفعيل المزامنة الفورية بعد تسجيل الدخول (التطبيق ظاهر بالفعل)
+      syncWithOnlineDatabase(id, pass, true);
     } else {
       showError(errorEl, '❌ كلمة المرور غير صحيحة.');
       resetBtn(btn);
     }
   }).catch(err => {
+    clearTimeout(loginTimeout);
     console.error('خطأ Firebase:', err);
-    showError(errorEl, '❌ خطأ في الاتصال بالخادم.');
+    if (err.code === 'PERMISSION_DENIED') {
+      showError(errorEl, '❌ الوصول مرفوض. تحقق من قواعد Firebase.');
+    } else {
+      console.error('تفاصيل خطأ الاتصال:', err.message || err);
+      showError(errorEl, '❌ خطأ في الاتصال بالخادم. يرجى المحاولة لاحقاً.');
+    }
     resetBtn(btn);
   });
 }
@@ -262,10 +267,14 @@ function handleEmailLogin() {
   const email = document.getElementById('loginEmail').value;
   const password = document.getElementById('loginEmailPassword').value;
   const errorEl = document.getElementById('loginError');
+  const btn = document.getElementById('btnEmailLogin');
 
   if (!email || !password) {
     return showError(errorEl, 'يرجى إدخال البريد الإلكتروني وكلمة المرور.');
   }
+
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحقق...'; }
+  errorEl.style.display = 'none';
 
   firebase.auth().signInWithEmailAndPassword(email, password)
     .then(userCredential => {
@@ -274,10 +283,12 @@ function handleEmailLogin() {
     })
     .catch(error => {
       console.error('خطأ في تسجيل الدخول:', error.code, error.message);
+      if (btn) { btn.disabled = false; btn.innerHTML = 'دخول'; }
       if (['auth/user-not-found', 'auth/wrong-password', 'auth/invalid-credential'].includes(error.code)) {
         showError(errorEl, '❌ البريد الإلكتروني أو كلمة المرور غير صحيحة.');
       } else {
-        showError(errorEl, '❌ حدث خطأ أثناء تسجيل الدخول.');
+        console.error('تفاصيل خطأ تسجيل الدخول:', error.message);
+        showError(errorEl, '❌ حدث خطأ غير متوقع. يرجى المحاولة لاحقاً.');
       }
     });
 }
