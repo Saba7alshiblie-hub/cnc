@@ -264,15 +264,20 @@ function editPatient(patientId) {
 }
 
 function deletePatient(patientId) {
-  saveToFirebase();
-  loadPatients();
-  loadDashboard();
-  showToast('تم حذف المريض بنجاح', 'success');
-  // إذا كان ملف المريض المحذوف معروضًا، ارجع إلى صفحة المرضى
-  if (document.getElementById('pageProfile').classList.contains('active') && currentProfileId === patientId) {
-    showPage('patients');
-  }
-}, 'تأكيد الحذف');
+  showConfirm('هل أنت متأكد أنك تريد حذف هذا المريض؟', () => {
+    // حذف المريض من البيانات المحلية
+    delete dbData.patients[patientId];
+
+    // حفظ التغييرات في قاعدة البيانات
+    saveToFirebase();
+    loadPatients();
+    loadDashboard();
+    showToast('تم حذف المريض بنجاح', 'success');
+    // إذا كان ملف المريض المحذوف معروضًا، ارجع إلى صفحة المرضى
+    if (document.getElementById('pageProfile').classList.contains('active') && currentProfileId === patientId) {
+      showPage('patients');
+    }
+  }, 'تأكيد الحذف');
 }
 
 function exportPatients() {
